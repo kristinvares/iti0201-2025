@@ -1,4 +1,4 @@
-"""EX01: SPA."""
+"""EX01:SPA."""
 
 
 class Robot:
