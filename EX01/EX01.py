@@ -15,15 +15,12 @@ class Robot:
     def sense(self):
         """Gathers data."""
         pass
-    
     def plan(self):
         """Process the data."""
         pass
-
     def act(self):
         """Excecutes planned actions."""
         pass
-
     def spin(self):
         """Spin the robot."""
         self.sense()
