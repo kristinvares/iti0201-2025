@@ -11,7 +11,7 @@ class Robot:
             robot (object): An instance of a Turtlebot-like robot interface.
         """
         self.robot = robot
- 
+
     def sense(self):
         """Gathers data."""
         pass
