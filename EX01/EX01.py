@@ -1,5 +1,6 @@
 """EX01: SPA."""
 
+
 class Robot:
     """Turtlebot robot."""
 
