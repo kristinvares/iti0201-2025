@@ -7,7 +7,7 @@ class Robot:
         """Class initializer.
 
         Args:
-            robot (object): An instance of a Turtlebot-like robot interface.
+            robot (object): An instance of a Turtlebot-like robot interface..
         """
         self.robot = robot
 
