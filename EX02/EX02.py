@@ -53,6 +53,7 @@ class Robot:
                 self.result = "near"
             elif self.reading < 0.7:
                 self.result = "close"
+        return self.result
 
     def sense(self) -> None:
         """Gather sensor data.
