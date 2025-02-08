@@ -60,12 +60,12 @@ class Robot:
         Use the robot's sensors to collect data about its environment.
         This method updates internal state variables based on sensor readings.
         """
-        list_length = len(self.robot.get_lidar_range_list())
-        element_amount = list_length // 4
-        #print(element_amount)
-        self.reading = self.robot.get_lidar_range_list()[-element_amount]
-        #list_slice = self.reading[-element_amount]
-        print(self.reading)
+        if self.robot.get_lidar_range_list() is not None:
+
+            list_length = len(self.robot.get_lidar_range_list())
+            element_amount = list_length // 4
+            self.reading = self.robot.get_lidar_range_list()[-element_amount]
+            print(self.reading)
 
     def plan(self) -> None:
         """Plan the robot's actions.
@@ -99,4 +99,6 @@ if __name__ == "__main__":
     robot1._set_data([0, 0, 0, 0, [1, 2, 4, 5, 6]])
     robot.sense()
     robot1._set_data([0, 0, 0, 0, [1, 2, 4, 5, 6, 7, 8, 1, 5, 9]])
+    robot.sense()
+    robot1._set_data([0, 0, 0, 0, None])
     robot.sense()
