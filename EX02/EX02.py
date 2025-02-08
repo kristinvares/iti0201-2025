@@ -1,6 +1,7 @@
 """EX02: State Machines."""
 from turtlebot import Robot as robot1
 
+
 class Robot:
     """Turtlebot robot."""
 
@@ -11,6 +12,8 @@ class Robot:
             robot (object): An instance of a Turtlebot-like robot interface.
         """
         self.robot = robot
+        self.reading = None
+        self.result = None
 
     def get_state(self) -> str:
         """Extract the current state of the robot based on Lidar sensor readings.
@@ -40,6 +43,16 @@ class Robot:
             str: The current state of the robot based on its distance from an obstacle:
                  ("very far", "far", "near", or "close").
         """
+        if self.reading is not None:
+
+            if self.reading >= 1.5:
+                self.result = "very far"
+            elif 1.0 <= self.reading < 1.5:
+                self.result = "far"
+            elif 0.7 <= self.reading < 1.0:
+                self.result = "near"
+            elif self.reading < 0.7:
+                self.result = "close"
 
     def sense(self) -> None:
         """Gather sensor data.
@@ -70,3 +83,13 @@ class Robot:
         self.sense()
         self.plan()
         self.act()
+
+
+if __name__ == "__main__":
+    robot = Robot(robot1())
+    robot.reading = 0.8
+    robot.get_state()
+    print(robot.result)
+    robot.reading = None
+    robot.get_state()
+    print(robot.result)
