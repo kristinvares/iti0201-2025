@@ -29,6 +29,7 @@ class Robot:
         Process the data collected during sensing and decide the next course
         of action for the robot.
         """
+
         if self.lidar_data is not None:
             min_distance = min(self.lidar_data)
             min_index = self.lidar_data.index(min_distance)
