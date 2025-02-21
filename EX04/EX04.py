@@ -12,9 +12,17 @@ class Robot:
         """
         self.robot = robot
 
-    def get_ticks(self) -> float:
-        """Return the current time as a substitute for encoder ticks."""
-        return time.time()
+        self.kp = 1.0
+        self.ki = 0.1
+        self.kd = 0.05
+
+        self.previous_time = time.time()
+        self.previous_left_error = 0
+        self.previous_right_error = 0
+        self.left_error_sum = 0
+        self.right_error_sum = 0
+        self.left_wheel_speed = 0
+        self.right_wheel_speed = 0
 
 
     def set_pid(self, kp: float = 1.0, ki: float = 0.1, kd: float = 0.05) -> None:
@@ -41,52 +49,66 @@ class Robot:
 
     def update_left_wheel_speed(self) -> None:
         """Update left wheel speed using PID control."""
+        pass
 
     def update_right_wheel_speed(self) -> None:
         """Update right wheel speed using PID control."""
+        pass
 
     def get_pid_corrected_left_wheel_speed(self) -> float:
         """Return the corrected left wheel speed."""
+        return self.left_wheel_speed
 
     def get_pid_corrected_right_wheel_speed(self) -> float:
         """Return the corrected right wheel speed."""
+        return self.right_wheel_speed
 
     def sense(self) -> None:
         """Gather sensor data."""
-        kp = 0.01
-        ki = 0.01
-        kd = 0.01
+        current_time = time.time()
+        delta_time = current_time - self.previous_time
 
-        target_value = 100
-        previous_value = 0
+        if delta_time <= 0:
+            return  # Vältida jagamist nulliga või negatiivse ajaga
 
-        current_time = self.get_ticks()
-        previous_time = self.get_ticks()
-        delta_time = current_time - previous_time
+        # Oletame, et saame praegused kiirused robotilt
+        current_left_speed = self.left_wheel_speed  # Asenda tegeliku anduri lugemisega
+        current_right_speed = self.right_wheel_speed  # Asenda tegeliku anduri lugemisega
 
-        if delta_time > 0:
-            current_value = (self.get_ticks() - previous_value) / delta_time
-        else:
-            current_value = 0
-        error = target_value - current_value
-        error_sum = 0
-        error_sum = error_sum + error * delta_time
-        previous_error = 0
-        if delta_time > 0:
-            error_diff = (error - previous_error) / delta_time
-        else:
-            error_diff = 0
-        u = kp * error + ki * error_sum + kd * error_diff
-        print(u)
+        # Vasaku ratta PID arvutused
+        left_error = self.left_target - current_left_speed
+        self.left_error_sum += left_error * delta_time
+        left_derivative = (left_error - self.previous_left_error) / delta_time
+
+        left_correction = (self.kp * left_error +
+                           self.ki * self.left_error_sum +
+                           self.kd * left_derivative)
+
+        # Parema ratta PID arvutused
+        right_error = self.right_target - current_right_speed
+        self.right_error_sum += right_error * delta_time
+        right_derivative = (right_error - self.previous_right_error) / delta_time
+
+        right_correction = (self.kp * right_error +
+                            self.ki * self.right_error_sum +
+                            self.kd * right_derivative)
+
+        # Uuenda rataste kiiruseid
+        self.left_wheel_speed += left_correction
+        self.right_wheel_speed += right_correction
+
+        # Salvesta praegused vead ja aeg järgmise iteratsiooni jaoks
+        self.previous_left_error = left_error
+        self.previous_right_error = right_error
+        self.previous_time = current_time
 
     def plan(self) -> None:
         """Plan robot actions."""
-        self.update_right_wheel_speed()
-        self.update_left_wheel_speed()
+        pass
 
     def act(self) -> None:
         """Execute planned actions."""
-
+        pass
     def spin(self) -> None:
         """Spin the robot."""
         self.sense()
