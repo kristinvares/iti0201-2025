@@ -17,13 +17,14 @@ class Robot:
         self.kd = 0.05
 
         self.previous_time = time.time()
-        self.previous_left_error = 0
-        self.previous_right_error = 0
-        self.left_error_sum = 0
-        self.right_error_sum = 0
-        self.left_wheel_speed = 0
-        self.right_wheel_speed = 0
-
+        self.previous_left_error = 0.0
+        self.previous_right_error = 0.0
+        self.left_error_sum = 0.0
+        self.right_error_sum = 0.0
+        self.left_wheel_speed = 0.0
+        self.right_wheel_speed = 0.0
+        self.left_target = 0.0
+        self.right_target = 0.0
 
     def set_pid(self, kp: float = 1.0, ki: float = 0.1, kd: float = 0.05) -> None:
         """Set the PID controller gains for the robot's wheel speed control.
@@ -49,11 +50,11 @@ class Robot:
 
     def update_left_wheel_speed(self) -> None:
         """Update left wheel speed using PID control."""
-        pass
+        self.sense()
 
     def update_right_wheel_speed(self) -> None:
         """Update right wheel speed using PID control."""
-        pass
+        self.sense()
 
     def get_pid_corrected_left_wheel_speed(self) -> float:
         """Return the corrected left wheel speed."""
@@ -66,13 +67,10 @@ class Robot:
     def sense(self) -> None:
         """Gather sensor data."""
         current_time = time.time()
-        delta_time = max(current_time - self.previous_time, 0.001)
-
-        current_left_speed = self.left_wheel_speed
-        current_right_speed = self.right_wheel_speed
+        delta_time = max(current_time - self.previous_time, 0.001)  # Väldi nulliga jagamist
 
         # Vasaku ratta PID arvutused
-        left_error = self.left_target - current_left_speed
+        left_error = self.left_target - self.left_wheel_speed
         self.left_error_sum += left_error * delta_time
         self.left_error_sum = max(min(self.left_error_sum, 100), -100)  # Piira vigade summeerimist
 
@@ -82,7 +80,7 @@ class Robot:
                            self.kd * left_derivative)
 
         # Parema ratta PID arvutused
-        right_error = self.right_target - current_right_speed
+        right_error = self.right_target - self.right_wheel_speed
         self.right_error_sum += right_error * delta_time
         self.right_error_sum = max(min(self.right_error_sum, 100), -100)  # Piira vigade summeerimist
 
@@ -99,6 +97,7 @@ class Robot:
         self.previous_left_error = left_error
         self.previous_right_error = right_error
         self.previous_time = current_time
+
         print(
             f"delta_time: {delta_time}, left_error: {self.previous_left_error}, left_wheel_speed: {self.left_wheel_speed}")
 
