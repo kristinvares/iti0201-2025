@@ -66,20 +66,17 @@ class Robot:
     def sense(self) -> None:
         """Gather sensor data."""
         current_time = time.time()
-        delta_time = current_time - self.previous_time
+        delta_time = max(current_time - self.previous_time, 0.001)
 
-        if delta_time <= 0:
-            return  # Vältida jagamist nulliga või negatiivse ajaga
-
-        # Oletame, et saame praegused kiirused robotilt
-        current_left_speed = self.left_wheel_speed  # Asenda tegeliku anduri lugemisega
-        current_right_speed = self.right_wheel_speed  # Asenda tegeliku anduri lugemisega
+        current_left_speed = self.left_wheel_speed
+        current_right_speed = self.right_wheel_speed
 
         # Vasaku ratta PID arvutused
         left_error = self.left_target - current_left_speed
         self.left_error_sum += left_error * delta_time
-        left_derivative = (left_error - self.previous_left_error) / delta_time
+        self.left_error_sum = max(min(self.left_error_sum, 100), -100)  # Piira vigade summeerimist
 
+        left_derivative = (left_error - self.previous_left_error) / delta_time
         left_correction = (self.kp * left_error +
                            self.ki * self.left_error_sum +
                            self.kd * left_derivative)
@@ -87,8 +84,9 @@ class Robot:
         # Parema ratta PID arvutused
         right_error = self.right_target - current_right_speed
         self.right_error_sum += right_error * delta_time
-        right_derivative = (right_error - self.previous_right_error) / delta_time
+        self.right_error_sum = max(min(self.right_error_sum, 100), -100)  # Piira vigade summeerimist
 
+        right_derivative = (right_error - self.previous_right_error) / delta_time
         right_correction = (self.kp * right_error +
                             self.ki * self.right_error_sum +
                             self.kd * right_derivative)
@@ -101,6 +99,8 @@ class Robot:
         self.previous_left_error = left_error
         self.previous_right_error = right_error
         self.previous_time = current_time
+        print(
+            f"delta_time: {delta_time}, left_error: {self.previous_left_error}, left_wheel_speed: {self.left_wheel_speed}")
 
     def plan(self) -> None:
         """Plan robot actions."""
@@ -114,3 +114,6 @@ class Robot:
         self.sense()
         self.plan()
         self.act()
+
+if __name__ == "__main__":
+    pass
