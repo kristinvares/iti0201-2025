@@ -81,11 +81,11 @@ class Robot:
     #     return self.robot_x, self.robot_y, self.theta
     #
     def sense(self) -> None:
-    #     """Gather sensor data.
-    #
-    #     Use the robot's sensors to collect data about its environment.
-    #     This method updates internal state variables based on sensor readings.
-    #     """
+         """Gather sensor data.
+
+         Use the robot's sensors to collect data about its environment.
+         This method updates internal state variables based on sensor readings.
+         """
     #     self.lidar_data = self.robot.get_lidar_range_list()
     #     self.current_time = self.robot.get_time()
     #     self.left_ticks = self.robot.get_left_motor_encoder_ticks()
