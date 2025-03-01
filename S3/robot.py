@@ -60,8 +60,9 @@ class Robot:
         right_ticks = self.robot.get_right_motor_encoder_ticks()
         print(right_ticks)
 
-    #     delta_left_ticks = left_ticks - self.previous_left_ticks
-    #     delta_right_ticks = right_ticks - self.previous_right_ticks
+        delta_left_ticks = left_ticks - self.previous_left_ticks
+        delta_right_ticks = right_ticks - self.previous_right_ticks
+        print(delta_right_ticks)
     #
     #     left_velocity = (delta_left_ticks / self.TICKS_PER_RADIANS) / delta_time
     #     right_velocity = (delta_right_ticks / self.TICKS_PER_RADIANS) / delta_time
