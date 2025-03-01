@@ -53,12 +53,13 @@ class Robot:
         delta_time = self.current_time - self.previous_time
         print(delta_time)
 
-    #     if delta_time <= 0:
-    #         return self.robot_x, self.robot_y, self.theta
-    #
-    #     left_ticks = self.robot.get_left_motor_encoder_ticks()
-    #     right_ticks = self.robot.get_right_motor_encoder_ticks()
-    #
+        if delta_time <= 0:
+             return self.robot_x, self.robot_y, self.theta
+
+         left_ticks = self.robot.get_left_motor_encoder_ticks()
+        right_ticks = self.robot.get_right_motor_encoder_ticks()
+        print(right_ticks)
+
     #     delta_left_ticks = left_ticks - self.previous_left_ticks
     #     delta_right_ticks = right_ticks - self.previous_right_ticks
     #
