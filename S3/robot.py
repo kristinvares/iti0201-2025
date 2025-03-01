@@ -106,12 +106,13 @@ class Robot:
 
         target_x = 1.0
         target_y = 1.0
-    #
-    #     # 📍 Arvutame kauguse ja nurga
-    #     delta_x = target_x - self.robot_x
-    #     delta_y = target_y - self.robot_y
-    #     distance = math.sqrt(delta_x ** 2 + delta_y ** 2)  # Kaugus sihtpunktini
-    #     target_angle = math.atan2(delta_y, delta_x)  # Sihtpunkti nurk
+
+        delta_x = target_x - self.robot_x
+        delta_y = target_y - self.robot_y
+        distance = math.sqrt(delta_x ** 2 + delta_y ** 2)
+        print(distance)
+        target_angle = math.atan2(delta_y, delta_x)
+        print(target_angle)
     #
     #     # 🏁 Kui sihtpunkt on väga lähedal, peatame roboti
     #     if distance < 0.1:
