@@ -80,7 +80,7 @@ class Robot:
     #
     #     return self.robot_x, self.robot_y, self.theta
     #
-    # def sense(self) -> None:
+    def sense(self) -> None:
     #     """Gather sensor data.
     #
     #     Use the robot's sensors to collect data about its environment.
@@ -137,8 +137,8 @@ class Robot:
 
         This is the main loop where the robot performs its sense-plan-act cycle.
         """
-        while True:
-           # self.sense()
-            self.plan()
-            self.act()
+
+        self.sense()
+        self.plan()
+        self.act()
 
