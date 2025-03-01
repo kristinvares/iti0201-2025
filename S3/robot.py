@@ -4,6 +4,7 @@ import math
 import numpy as np
 
 
+
 #from S1 import turtlebot
 
 
@@ -56,7 +57,7 @@ class Robot:
         if delta_time <= 0:
              return self.robot_x, self.robot_y, self.theta
 
-         left_ticks = self.robot.get_left_motor_encoder_ticks()
+        left_ticks = self.robot.get_left_motor_encoder_ticks()
         right_ticks = self.robot.get_right_motor_encoder_ticks()
         print(right_ticks)
 
