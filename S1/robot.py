@@ -110,14 +110,19 @@ class Robot:
             if distance < 0.3:  # If too close, stop
                 self.robot.set_right_motor_velocity(0)
                 self.robot.set_left_motor_velocity(0)
+        self.set_right_motor_torque()
+        self.set_left_motor_torque()
+        self.get_left_motor_encoder_ticks()
 
             # REALISTIC MODE
     def set_right_motor_torque(self, torque: float) -> None:
         torque_right = max(min(torque, 1.0), -1.0)
+        print(torque_right)
         self.robot.right_motor.set_torque(torque)
 
     def set_left_motor_torque(self, torque: float) -> None:
         torque_left = max(min(torque, 1.0), -1.0)
+        print(torque_left)
         self.robot.left_motor.set_torque(torque)
 
     def get_left_motor_encoder_ticks(self) -> int:
