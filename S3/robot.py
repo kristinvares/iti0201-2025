@@ -126,14 +126,14 @@ class Robot:
         """
     #
     #     print(
-    #         f"➡️ Moving: {self.moving_forward} | ⬅️ Turning Left: {self.turning_left} | ➡️ Turning Right: {self.turning_right}")
+    #         f" Moving: {self.moving_forward} | Turning Left: {self.turning_left} |  Turning Right: {self.turning_right}")
     #
     #     if self.moving_forward and not self.turning_right and not self.turning_left:
-    #         print("🚀 Moving forward!")
+    #         print("Moving forward!")
     #         self.robot.set_right_motor_velocity(2.0)
     #         self.robot.set_left_motor_velocity(2.0)
     #     else:
-    #         print("🔄 Still adjusting (turning or correcting angle)...")
+    #         print(" Still adjusting (turning or correcting angle)...")
 
     def spin(self) -> None:
         """Spin the robot.
