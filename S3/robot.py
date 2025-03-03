@@ -89,14 +89,14 @@ class Robot:
          Use the robot's sensors to collect data about its environment.
          This method updates internal state variables based on sensor readings.
          """
-    #     self.lidar_data = self.robot.get_lidar_range_list()
-    #     self.current_time = self.robot.get_time()
-    #     self.left_ticks = self.robot.get_left_motor_encoder_ticks()
-    #     self.right_ticks = self.robot.get_right_motor_encoder_ticks()
+         self.lidar_data = self.robot.get_lidar_range_list()
+         self.current_time = self.robot.get_time()
+         self.left_ticks = self.robot.get_left_motor_encoder_ticks()
+         self.right_ticks = self.robot.get_right_motor_encoder_ticks()
     #
-    #     if self.start_orientation is None:
-    #         self.start_orientation = self.robot.get_orientation()
-    #     self.theta = self.robot.get_orientation() - self.start_orientation
+         if self.start_orientation is None:
+             self.start_orientation = self.robot.get_orientation()
+         self.theta = self.robot.get_orientation() - self.start_orientation
 
     def plan(self) -> None:
         """Plan the robot's actions.
