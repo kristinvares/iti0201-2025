@@ -117,6 +117,7 @@ class Robot:
     #     print(distance)
     #     target_angle = math.atan2(delta_y, delta_x)
     #     print(target_angle)
+        self.get_robot_pose()
 
     def act(self) -> None:
         """Execute planned actions.
