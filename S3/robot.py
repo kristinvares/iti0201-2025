@@ -4,8 +4,7 @@ import math
 import numpy as np
 
 
-
-#from S1 import turtlebot
+# from S1 import turtlebot
 
 
 class Robot:
@@ -19,27 +18,20 @@ class Robot:
         """
         self.robot = robot
         self.WHEEL_BASE = 0.233
-        self.TRACK_WIDTH = self.WHEEL_BASE
-        self.TICKS_PER_RADIANS = 508.8 / (2 * math.pi)
         self.WHEEL_RADIUS = 0.03575
+        self.TICKS_PER_RADIANS = 508.8 / (2 * math.pi)
 
-        self.previous_x = 0.0
-        self.previous_y = 0.0
-
-        self.start_orientation = None
+        self.robot_x = 0.0
+        self.robot_y = 0.0
         self.theta = 0.0
 
-        self.left_ticks = 0
-        self.right_ticks = 0
-
-        self.previous_left_ticks = 0
-        self.previous_right_ticks = 0
         self.previous_time = 0
         self.current_time = 0
 
-        self.lidar_data = None
-        self.robot_x = 0.0
-        self.robot_y = 0.0
+        self.left_ticks = 0
+        self.right_ticks = 0
+        self.previous_left_ticks = 0
+        self.previous_right_ticks = 0
 
         self.turning_left = False
         self.turning_right = False
@@ -48,101 +40,127 @@ class Robot:
         self.detected_objects = []
         self.target_object = None
 
+        self.lidar_data = None
+        self.triangle_vertex = None
+        self.target_x = None
+        self.target_y = None
 
-    def get_robot_pose(self) -> tuple:
-        """Return the current robot pose."""
-        delta_time = self.current_time - self.previous_time
-        print(delta_time)
 
-        #if delta_time <= 0:
-         #    return self.robot_x, self.robot_y, self.theta
+def get_robot_pose(self) -> tuple:
+    """Return the current robot pose."""
+    delta_time = self.current_time - self.previous_time
+    print("Delta Time:", delta_time)
 
-        #left_ticks = self.robot.get_left_motor_encoder_ticks()
-        #right_ticks = self.robot.get_right_motor_encoder_ticks()
-        #print(right_ticks)
+    if delta_time <= 0:
+        return self.robot_x, self.robot_y, self.theta
 
-        #delta_left_ticks = left_ticks - self.previous_left_ticks
-        #delta_right_ticks = right_ticks - self.previous_right_ticks
-        #print(delta_right_ticks)
-    #
-    #     left_velocity = (delta_left_ticks / self.TICKS_PER_RADIANS) / delta_time
-    #     right_velocity = (delta_right_ticks / self.TICKS_PER_RADIANS) / delta_time
-    #
-    #     linear_velocity = (self.WHEEL_RADIUS / 2) * (left_velocity + right_velocity)
-    #     angular_velocity = (self.WHEEL_RADIUS / self.WHEEL_BASE) * (right_velocity - left_velocity)
-    #
-    #     self.theta += angular_velocity * delta_time
-    #     self.theta = (self.theta + np.pi) % (2 * np.pi) - np.pi
-    #
-    #     self.robot_x += linear_velocity * math.cos(self.theta) * delta_time
-    #     self.robot_y += linear_velocity * math.sin(self.theta) * delta_time
-    #
-    #     self.previous_time = self.current_time
-    #     self.previous_left_ticks = left_ticks
-    #     self.previous_right_ticks = right_ticks
-    #
-    #     return self.robot_x, self.robot_y, self.theta
-    #
-    def sense(self) -> None:
-         """Gather sensor data.
+    left_ticks = self.robot.get_left_motor_encoder_ticks()
+    right_ticks = self.robot.get_right_motor_encoder_ticks()
 
-         Use the robot's sensors to collect data about its environment.
-         This method updates internal state variables based on sensor readings.
-         """
-         self.lidar_data = self.robot.get_lidar_range_list()
-         self.current_time = self.robot.get_time()
-         #self.left_ticks = self.robot.get_left_motor_encoder_ticks()
-         #self.right_ticks = self.robot.get_right_motor_encoder_ticks()
-    #
-        # if self.start_orientation is None:
-         #    self.start_orientation = self.robot.get_orientation()
-         #self.theta = self.robot.get_orientation() - self.start_orientation
+    delta_left_ticks = left_ticks - self.previous_left_ticks
+    delta_right_ticks = right_ticks - self.previous_right_ticks
 
-    def plan(self) -> None:
-        """Plan the robot's actions.
+    left_velocity = (delta_left_ticks / self.TICKS_PER_RADIANS) / delta_time
+    right_velocity = (delta_right_ticks / self.TICKS_PER_RADIANS) / delta_time
 
-        Process the data collected during sensing and decide the next course
-        of action for the robot.
-        """
-    #     self.turning_left = False
-    #     self.turning_right = False
-    #     self.moving_forward = False
-    #
-    #     target_x = 1.0
-    #     target_y = 1.0
-    #
-    #     delta_x = target_x - self.robot_x
-    #     delta_y = target_y - self.robot_y
-    #     distance = math.sqrt(delta_x ** 2 + delta_y ** 2)
-    #     print(distance)
-    #     target_angle = math.atan2(delta_y, delta_x)
-    #     print(target_angle)
-        self.get_robot_pose()
+    linear_velocity = (self.WHEEL_RADIUS / 2) * (left_velocity + right_velocity)
+    angular_velocity = (self.WHEEL_RADIUS / self.WHEEL_BASE) * (right_velocity - left_velocity)
 
-    def act(self) -> None:
-        """Execute planned actions.
+    self.theta += angular_velocity * delta_time
+    self.theta = (self.theta + np.pi) % (2 * np.pi) - np.pi
 
-        Perform the actions decided in the planning step, such as moving or
-        interacting with the environment.
-        """
-    #
-    #     print(
-    #         f" Moving: {self.moving_forward} | Turning Left: {self.turning_left} |  Turning Right: {self.turning_right}")
-    #
-    #     if self.moving_forward and not self.turning_right and not self.turning_left:
-    #         print("Moving forward!")
-    #         self.robot.set_right_motor_velocity(2.0)
-    #         self.robot.set_left_motor_velocity(2.0)
-    #     else:
-    #         print(" Still adjusting (turning or correcting angle)...")
+    self.robot_x += linear_velocity * math.cos(self.theta) * delta_time
+    self.robot_y += linear_velocity * math.sin(self.theta) * delta_time
 
-    def spin(self) -> None:
-        """Spin the robot.
+    self.previous_time = self.current_time
+    self.previous_left_ticks = left_ticks
+    self.previous_right_ticks = right_ticks
 
-        This is the main loop where the robot performs its sense-plan-act cycle.
-        """
+    return self.robot_x, self.robot_y, self.theta
 
-        self.sense()
-        self.plan()
-        self.act()
 
+def sense(self) -> None:
+    """Gather sensor data.
+
+    Use the robot's sensors to collect data about its environment.
+    This method updates internal state variables based on sensor readings.
+    """
+    self.lidar_data = self.robot.get_lidar_range_list()
+    self.current_time = self.robot.get_time()
+    self.left_ticks = self.robot.get_left_motor_encoder_ticks()
+    self.right_ticks = self.robot.get_right_motor_encoder_ticks()
+
+
+def detect_triangle(self) -> None:
+    if self.lidar_data is None:
+        return
+
+    points = []
+    for i, distance in enumerate(self.lidar_data):
+        angle = i * (2 * np.pi / len(self.lidar_data))
+        x = self.robot_x + distance * np.cos(angle)
+        y = self.robot_y + distance * np.sin(angle)
+        points.append((x, y))
+    points = sorted(points, key=lambda p: np.linalg.norm([p[0] - self.robot_x, p[1] - self.robot_y]))
+
+    if len(points) >= 3:
+        A, B, C = points[:3]
+
+        d1 = np.linalg.norm(np.array(A) - np.array(B))
+        d2 = np.linalg.norm(np.array(B) - np.array(C))
+        d3 = np.linalg.norm(np.array(C) - np.array(A))
+
+        if abs(d1 - d2) < 0.05 and abs(d2 - d3) < 0.05:
+            self.triangle_vertex = C
+            self.target_x, self.target_y = C
+            print(f"Kolmnurga tipp leitud: {self.target_x}, {self.target_y}")
+
+
+def plan(self) -> None:
+    """Plan the robot's actions.
+
+    Process the data collected during sensing and decide the next course
+    of action for the robot.
+    """
+    self.get_robot_pose()
+    self.detect_triangle()
+
+    if self.target_x and self.target_y:
+        delta_x = self.target_x - self.robot_x
+        delta_y = self.target_y - self.robot_y
+        distance = math.sqrt(delta_x ** 2 + delta_y ** 2)
+        target_angle = math.atan2(delta_y, delta_x)
+
+        print(f"Sihtmärk: ({self.target_x}, {self.target_y}), Kaugus: {distance}, Nurk: {target_angle}")
+
+        self.moving_forward = True
+        self.turning_left = False
+        self.turning_right = False
+
+
+def act(self) -> None:
+    """Execute planned actions.
+
+    Perform the actions decided in the planning step, such as moving or
+    interacting with the environment.
+    """
+    print(
+        f" Moving: {self.moving_forward} | Turning Left: {self.turning_left} |  Turning Right: {self.turning_right}")
+
+    if self.moving_forward and not self.turning_right and not self.turning_left:
+        print("Moving forward!")
+        self.robot.set_right_motor_velocity(2.0)
+        self.robot.set_left_motor_velocity(2.0)
+    else:
+        print(" Still adjusting (turning or correcting angle)...")
+
+
+def spin(self) -> None:
+    """Spin the robot.
+
+    This is the main loop where the robot performs its sense-plan-act cycle.
+    """
+
+    self.sense()
+    self.plan()
+    self.act()
