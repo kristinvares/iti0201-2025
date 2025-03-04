@@ -94,9 +94,9 @@ class Robot:
          self.left_ticks = self.robot.get_left_motor_encoder_ticks()
          self.right_ticks = self.robot.get_right_motor_encoder_ticks()
     #
-         if self.start_orientation is None:
-             self.start_orientation = self.robot.get_orientation()
-         self.theta = self.robot.get_orientation() - self.start_orientation
+        # if self.start_orientation is None:
+         #    self.start_orientation = self.robot.get_orientation()
+         #self.theta = self.robot.get_orientation() - self.start_orientation
 
     def plan(self) -> None:
         """Plan the robot's actions.
