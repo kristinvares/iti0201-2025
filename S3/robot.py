@@ -54,16 +54,16 @@ class Robot:
         delta_time = self.current_time - self.previous_time
         print(delta_time)
 
-        if delta_time <= 0:
-             return self.robot_x, self.robot_y, self.theta
+        #if delta_time <= 0:
+         #    return self.robot_x, self.robot_y, self.theta
 
-        left_ticks = self.robot.get_left_motor_encoder_ticks()
-        right_ticks = self.robot.get_right_motor_encoder_ticks()
-        print(right_ticks)
+        #left_ticks = self.robot.get_left_motor_encoder_ticks()
+        #right_ticks = self.robot.get_right_motor_encoder_ticks()
+        #print(right_ticks)
 
-        delta_left_ticks = left_ticks - self.previous_left_ticks
-        delta_right_ticks = right_ticks - self.previous_right_ticks
-        print(delta_right_ticks)
+        #delta_left_ticks = left_ticks - self.previous_left_ticks
+        #delta_right_ticks = right_ticks - self.previous_right_ticks
+        #print(delta_right_ticks)
     #
     #     left_velocity = (delta_left_ticks / self.TICKS_PER_RADIANS) / delta_time
     #     right_velocity = (delta_right_ticks / self.TICKS_PER_RADIANS) / delta_time
@@ -91,8 +91,8 @@ class Robot:
          """
          self.lidar_data = self.robot.get_lidar_range_list()
          self.current_time = self.robot.get_time()
-         self.left_ticks = self.robot.get_left_motor_encoder_ticks()
-         self.right_ticks = self.robot.get_right_motor_encoder_ticks()
+         #self.left_ticks = self.robot.get_left_motor_encoder_ticks()
+         #self.right_ticks = self.robot.get_right_motor_encoder_ticks()
     #
         # if self.start_orientation is None:
          #    self.start_orientation = self.robot.get_orientation()
