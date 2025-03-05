@@ -101,27 +101,33 @@ class Robot:
                 self.target_x, self.target_y = C
                 print(f"Kolmnurga tipp leitud: {self.target_x}, {self.target_y}")
 
-    def check_obstacles(self) -> bool:
+    def check_obstacles(self) -> str:
         """Kontrollib, kas LIDAR andmetes on takistus roboti ees."""
         if self.lidar_data is None:
-            return False
+            return "clear"
 
         front_distance = min(self.lidar_data[:15] + self.lidar_data[-15:])
 
         if front_distance < 0.4:
-            print("Takistus tuvastatud! Peatume ja pöörame.")
-            return True
-        return False
+            print("Takistus tuvastatud!")
+            left_side = np.mean(self.lidar_data[45:90])
+            right_side = np.mean(self.lidar_data[-90:-45])
+
+            return "left" if left_side > right_side else "right"
+
+        return "clear"
 
     def plan(self) -> None:
         """Plan the robot's actions."""
         self.get_robot_pose()
         self.detect_triangle()
 
-        if self.check_obstacles():
+        obstacle_direction = self.check_obstacles()
+
+        if obstacle_direction != "clear":
             self.moving_forward = False
-            self.turning_left = True
-            self.turning_right = False
+            self.turning_left = obstacle_direction == "left"
+            self.turning_right = obstacle_direction == "right"
             return
 
         if self.target_x and self.target_y:
@@ -131,6 +137,7 @@ class Robot:
             target_angle = math.atan2(delta_y, delta_x)
 
             print(f"Sihtmärk: ({self.target_x}, {self.target_y}), Kaugus: {distance}, Nurk: {target_angle}")
+
             angle_diff = (target_angle - self.theta + np.pi) % (2 * np.pi) - np.pi
 
             if abs(angle_diff) > 0.1:
