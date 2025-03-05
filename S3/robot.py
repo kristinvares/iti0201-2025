@@ -102,14 +102,14 @@ class Robot:
                 print(f"Kolmnurga tipp leitud: {self.target_x}, {self.target_y}")
 
     def check_obstacles(self) -> str:
-        """Kontrollib, kas LIDAR andmetes on takistus roboti ees."""
+        """Checks whether there is an obstacle in front of the robot in the LIDAR data and determines the best turning direction."""
         if self.lidar_data is None:
             return "clear"
 
         front_distance = min(self.lidar_data[:15] + self.lidar_data[-15:])
 
         if front_distance < 0.4:
-            print("Takistus tuvastatud!")
+            print("Takistus tuvastatud! Peatume ja pöörame.")
             left_side = np.mean(self.lidar_data[45:90])
             right_side = np.mean(self.lidar_data[-90:-45])
 
@@ -130,6 +130,9 @@ class Robot:
             self.turning_right = obstacle_direction == "right"
             return
 
+        if not self.turning_left and not self.turning_right:
+            self.moving_forward = True
+
         if self.target_x and self.target_y:
             delta_x = self.target_x - self.robot_x
             delta_y = self.target_y - self.robot_y
@@ -140,7 +143,7 @@ class Robot:
 
             angle_diff = (target_angle - self.theta + np.pi) % (2 * np.pi) - np.pi
 
-            if abs(angle_diff) > 0.1:
+            if abs(angle_diff) > 0.2:
                 self.moving_forward = False
                 self.turning_left = angle_diff > 0
                 self.turning_right = not self.turning_left
