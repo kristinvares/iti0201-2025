@@ -113,10 +113,16 @@ class Robot:
             target_angle = math.atan2(delta_y, delta_x)
 
             print(f"Sihtmärk: ({self.target_x}, {self.target_y}), Kaugus: {distance}, Nurk: {target_angle}")
+            angle_diff = (target_angle - self.theta + np.pi) % (2 * np.pi) - np.pi
 
-            self.moving_forward = True
-            self.turning_left = False
-            self.turning_right = False
+            if abs(angle_diff) > 0.1:
+                self.moving_forward = False
+                self.turning_left = angle_diff > 0
+                self.turning_right = not self.turning_left
+            else:
+                self.moving_forward = True
+                self.turning_left = False
+                self.turning_right = False
 
     def act(self) -> None:
         """Execute planned actions."""
