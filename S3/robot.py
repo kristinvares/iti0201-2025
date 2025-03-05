@@ -101,37 +101,10 @@ class Robot:
                 self.target_x, self.target_y = C
                 print(f"Kolmnurga tipp leitud: {self.target_x}, {self.target_y}")
 
-    def check_obstacles(self) -> str:
-        """Checks whether there is an obstacle in front of the robot in the LIDAR data and determines the best turning direction."""
-        if self.lidar_data is None:
-            return "clear"
-
-        front_distance = min(self.lidar_data[:15] + self.lidar_data[-15:])
-
-        if front_distance < 0.4:
-            print("Takistus tuvastatud! Peatume ja pöörame.")
-            left_side = np.mean(self.lidar_data[45:90])
-            right_side = np.mean(self.lidar_data[-90:-45])
-
-            return "left" if left_side > right_side else "right"
-
-        return "clear"
-
     def plan(self) -> None:
         """Plan the robot's actions."""
         self.get_robot_pose()
         self.detect_triangle()
-
-        obstacle_direction = self.check_obstacles()
-
-        if obstacle_direction != "clear":
-            self.moving_forward = False
-            self.turning_left = obstacle_direction == "left"
-            self.turning_right = obstacle_direction == "right"
-            return
-
-        if not self.turning_left and not self.turning_right:
-            self.moving_forward = True
 
         if self.target_x and self.target_y:
             delta_x = self.target_x - self.robot_x
@@ -141,41 +114,22 @@ class Robot:
 
             print(f"Sihtmärk: ({self.target_x}, {self.target_y}), Kaugus: {distance}, Nurk: {target_angle}")
 
-            angle_diff = (target_angle - self.theta + np.pi) % (2 * np.pi) - np.pi
 
-            if abs(angle_diff) > 0.2:
-                self.moving_forward = False
-                self.turning_left = angle_diff > 0
-                self.turning_right = not self.turning_left
-            else:
-                self.moving_forward = True
-                self.turning_left = False
-                self.turning_right = False
+            self.moving_forward = True
+            self.turning_left = False
+            self.turning_right = False
 
     def act(self) -> None:
         """Execute planned actions."""
         print(
-            f"Moving: {self.moving_forward} | Turning Left: {self.turning_left} | Turning Right: {self.turning_right}")
+            f" Moving: {self.moving_forward} | Turning Left: {self.turning_left} |  Turning Right: {self.turning_right}")
 
-        if self.turning_left:
-            print("Turning left to avoid obstacle or adjust direction...")
-            self.robot.set_left_motor_velocity(-1.0)
-            self.robot.set_right_motor_velocity(1.0)
-
-        elif self.turning_right:
-            print("Turning right to avoid obstacle or adjust direction...")
-            self.robot.set_left_motor_velocity(1.0)
-            self.robot.set_right_motor_velocity(-1.0)
-
-        elif self.moving_forward:
+        if self.moving_forward and not self.turning_right and not self.turning_left:
             print("Moving forward!")
             self.robot.set_right_motor_velocity(2.0)
             self.robot.set_left_motor_velocity(2.0)
-
         else:
-            print("Stopping...")
-            self.robot.set_right_motor_velocity(0)
-            self.robot.set_left_motor_velocity(0)
+            print(" Still adjusting (turning or correcting angle)...")
 
     def spin(self) -> None:
         """Spin the robot."""
