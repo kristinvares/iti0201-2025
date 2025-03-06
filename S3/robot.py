@@ -106,17 +106,29 @@ class Robot:
         self.get_robot_pose()
         self.detect_triangle()
 
-        if self.target_x and self.target_y:
-            delta_x = self.target_x - self.robot_x
-            delta_y = self.target_y - self.robot_y
-            distance = math.sqrt(delta_x ** 2 + delta_y ** 2)
-            target_angle = math.atan2(delta_y, delta_x)
+        if self.target_x is None or self.target_y is None:
+            print("No target found. Waiting for detection...")
+            return
 
-            print(f"Sihtmärk: ({self.target_x}, {self.target_y}), Kaugus: {distance}, Nurk: {target_angle}")
+        delta_x = self.target_x - self.robot_x
+        delta_y = self.target_y - self.robot_y
+        target_angle = math.atan2(delta_y, delta_x)
 
-            self.moving_forward = True
-            self.turning_left = False
-            self.turning_right = False
+        print(f"Target: ({self.target_x}, {self.target_y}), Angle: {target_angle}, Robot Angle: {self.theta}")
+
+        angle_diff = (target_angle - self.theta + np.pi) % (2 * np.pi) - np.pi
+
+        if abs(angle_diff) > 0.15:
+            self.moving_forward = False
+            self.turning_left = angle_diff > 0
+            self.turning_right = not self.turning_left
+            print(f"Rotating {'left' if self.turning_left else 'right'} to align with target.")
+            return
+
+        self.moving_forward = True
+        self.turning_left = False
+        self.turning_right = False
+        print("Aligned with target. Moving forward!")
 
     def act(self) -> None:
         """Execute planned actions."""
