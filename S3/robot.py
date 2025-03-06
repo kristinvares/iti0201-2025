@@ -118,7 +118,7 @@ class Robot:
 
         angle_diff = (target_angle - self.theta + np.pi) % (2 * np.pi) - np.pi
 
-        if abs(angle_diff) > 0.15:
+        if abs(angle_diff) > 0.05:
             self.moving_forward = False
             self.turning_left = angle_diff > 0
             self.turning_right = not self.turning_left
@@ -133,14 +133,27 @@ class Robot:
     def act(self) -> None:
         """Execute planned actions."""
         print(
-            f" Moving: {self.moving_forward} | Turning Left: {self.turning_left} |  Turning Right: {self.turning_right}")
+            f"Moving: {self.moving_forward} | Turning Left: {self.turning_left} | Turning Right: {self.turning_right}")
 
-        if self.moving_forward and not self.turning_right and not self.turning_left:
+        if self.turning_left:
+            print("Turning left to align with target...")
+            self.robot.set_left_motor_velocity(-0.5)
+            self.robot.set_right_motor_velocity(0.5)
+
+        elif self.turning_right:
+            print("Turning right to align with target...")
+            self.robot.set_left_motor_velocity(0.5)
+            self.robot.set_right_motor_velocity(-0.5)
+
+        elif self.moving_forward:
             print("Moving forward!")
-            self.robot.set_right_motor_velocity(2.0)
-            self.robot.set_left_motor_velocity(2.0)
+            self.robot.set_right_motor_velocity(1.5)
+            self.robot.set_left_motor_velocity(1.5)
+
         else:
-            print(" Still adjusting (turning or correcting angle)...")
+            print("Stopping...")
+            self.robot.set_right_motor_velocity(0)
+            self.robot.set_left_motor_velocity(0)
 
     def spin(self) -> None:
         """Spin the robot."""
