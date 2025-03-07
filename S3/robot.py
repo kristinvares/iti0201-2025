@@ -149,6 +149,7 @@ class Robot:
         # Roboti ja punkti kaugus
         distance_to_target = math.sqrt(delta_x ** 2 + delta_y ** 2)
 
+
         if abs(self.target_angle) < 0.01:
             self.moving_forward = True
         #print(f"Moving straight ({self.target_angle}))
@@ -156,7 +157,7 @@ class Robot:
             self.moving_forward = False
             self.turning_left = False
             self.turning_right = False
-            print("Reached the target. Stopping.")
+            print("Reached the target. Stopping.", flush=True)
             return
         
     def act(self) -> None:
