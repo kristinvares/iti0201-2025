@@ -36,6 +36,7 @@ class Robot:
         self.triangle_vertex = None
         self.target_x = None
         self.target_y = None
+        self.target_angle = None
 
     def get_robot_pose(self) -> tuple:
         """Return the current robot pose."""
@@ -112,7 +113,9 @@ class Robot:
 
         delta_x = self.target_x - self.robot_x
         delta_y = self.target_y - self.robot_y
-        target_angle = math.atan2(delta_y, delta_x)
+
+        if self.target_angle is None:
+            target_angle = math.atan2(delta_y, delta_x)
 
         print(f"Target: ({self.target_x}, {self.target_y}), Angle: {target_angle}, Robot Angle: {self.theta}")
 
