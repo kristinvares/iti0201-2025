@@ -115,7 +115,7 @@ class Robot:
         delta_y = self.target_y - self.robot_y
 
         if self.target_angle is None:
-            target_angle = math.atan2(delta_y, delta_x)
+            self.target_angle = math.atan2(delta_y, delta_x)
 
         print(f"Target: ({self.target_x}, {self.target_y}), Angle: {self.target_angle}, Robot Angle: {self.theta}")
 
