@@ -117,9 +117,9 @@ class Robot:
         if self.target_angle is None:
             target_angle = math.atan2(delta_y, delta_x)
 
-        print(f"Target: ({self.target_x}, {self.target_y}), Angle: {target_angle}, Robot Angle: {self.theta}")
+        print(f"Target: ({self.target_x}, {self.target_y}), Angle: {self.target_angle}, Robot Angle: {self.theta}")
 
-        angle_diff = (target_angle - self.theta + np.pi) % (2 * np.pi) - np.pi
+        angle_diff = (self.target_angle - self.theta + np.pi) % (2 * np.pi) - np.pi
 
         if abs(angle_diff) > 0.05:
             self.moving_forward = False
