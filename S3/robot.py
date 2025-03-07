@@ -143,7 +143,22 @@ class Robot:
         self.turning_right = False
         print("Aligned with target. Moving forward!")
 
+    # angle oli nullilähedane. Robot kaugus ja punkti kaugus väiksem kui 10cm
+    def distance(self, delta_x=None, delta_y=None):
 
+        # Roboti ja punkti kaugus
+        distance_to_target = math.sqrt(delta_x ** 2 + delta_y ** 2)
+
+        if abs(self.target_angle) < 0.01:
+            self.moving_forward = True
+        #print(f"Moving straight ({self.target_angle}))
+        if distance_to_target < 0.1:  # 0.1m = 10cm
+            self.moving_forward = False
+            self.turning_left = False
+            self.turning_right = False
+            print("Reached the target. Stopping.")
+            return
+        
     def act(self) -> None:
         """Execute planned actions."""
         print(
