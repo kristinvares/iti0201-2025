@@ -164,6 +164,8 @@ class Robot:
             self.robot.set_right_motor_velocity(1.5)
             self.robot.set_left_motor_velocity(1.5)
 
+
+
         else:
             print("Stopping...")
             self.robot.set_right_motor_velocity(0)
