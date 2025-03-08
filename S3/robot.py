@@ -163,6 +163,8 @@ class Robot:
     def detect_triangle(self) -> None:
         # if self.lidar_data is None:
         #   return
+        self.get_robot_pose()
+        self.detect_triangle()
 
         points = []
         for i, distance in enumerate(self.lidar_data):
@@ -182,7 +184,7 @@ class Robot:
 
             if abs(d1 - d2) < 0.05 and abs(d2 - d3) < 0.05:
                 self.triangle_vertex = C
-                self.target_x, -self.target_y = C
+                self.target_x, self.target_y = C
                 print(f"Kolmnurga tipp leitud: {self.target_x}, {self.target_y}")
 
     # minu lisatud
