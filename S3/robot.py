@@ -213,7 +213,7 @@ class Robot:
 
         angle_diff = (self.target_angle - self.theta + np.pi) % (2 * np.pi) - np.pi
 
-        if abs(angle_diff) > 0.05:
+        if abs(angle_diff) > 0.15:
             self.moving_forward = False
             self.turning_left = angle_diff > 0
             self.turning_right = not self.turning_left
