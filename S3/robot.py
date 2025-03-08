@@ -166,56 +166,56 @@ class Robot:
                 self.left_velocity = 0
                 self.right_velocity = 0
 
-# angle oli nullilähedane. Robot kaugus ja punkti kaugus väiksem kui 10cm
-# vaata videos kujutisi
-def distance(self, delta_x=None, delta_y=None):
-    # Roboti ja punkti kaugus
-    distance_to_target = math.sqrt(delta_x ** 2 + delta_y ** 2)
+    # angle oli nullilähedane. Robot kaugus ja punkti kaugus väiksem kui 10cm
+    # vaata videos kujutisi
+    def distance(self, delta_x=None, delta_y=None):
+        # Roboti ja punkti kaugus
+        distance_to_target = math.sqrt(delta_x ** 2 + delta_y ** 2)
 
-    if abs(self.target_angle) < 0.01:
-        self.moving_forward = True
-    # print(f"Moving straight ({self.target_angle}))
-    if distance_to_target < 0.1:  # 0.1m = 10cm
-        self.moving_forward = False
-        self.turning_left = False
-        self.turning_right = False
-        print("Reached the target. Stopping.", flush=True)
-        return
-
-
-def act(self) -> None:
-    """Execute planned actions."""
-    self.robot.set_left_motor_velocity(self.left_velocity)
-    self.robot.set_right_motor_velocity(self.right_velocity)
+        if abs(self.target_angle) < 0.01:
+            self.moving_forward = True
+        # print(f"Moving straight ({self.target_angle}))
+        if distance_to_target < 0.1:  # 0.1m = 10cm
+            self.moving_forward = False
+            self.turning_left = False
+            self.turning_right = False
+            print("Reached the target. Stopping.", flush=True)
+            return
 
 
-# print(
-#    f"Moving: {self.moving_forward} | Turning Left: {self.turning_left} | Turning Right: {self.turning_right}")
-
-# if self.turning_left:
-#   print("Turning left to align with target...")
-#  self.robot.set_left_motor_velocity(-0.5)
-# self.robot.set_right_motor_velocity(0.5)
-
-# elif self.turning_right:
-#   print("Turning right to align with target...")
-#  self.robot.set_left_motor_velocity(0.5)
-# self.robot.set_right_motor_velocity(-0.5)
-
-# elif self.moving_forward:
-#   print("Moving forward!")
-#  self.robot.set_right_motor_velocity(1.5)
-# self.robot.set_left_motor_velocity(1.5)
+    def act(self) -> None:
+        """Execute planned actions."""
+        self.robot.set_left_motor_velocity(self.left_velocity)
+        self.robot.set_right_motor_velocity(self.right_velocity)
 
 
-# else:
-#   print("Stopping...")
-#  self.robot.set_right_motor_velocity(0)
-# self.robot.set_left_motor_velocity(0)
+    # print(
+    #    f"Moving: {self.moving_forward} | Turning Left: {self.turning_left} | Turning Right: {self.turning_right}")
+
+    # if self.turning_left:
+    #   print("Turning left to align with target...")
+    #  self.robot.set_left_motor_velocity(-0.5)
+    # self.robot.set_right_motor_velocity(0.5)
+
+    # elif self.turning_right:
+    #   print("Turning right to align with target...")
+    #  self.robot.set_left_motor_velocity(0.5)
+    # self.robot.set_right_motor_velocity(-0.5)
+
+    # elif self.moving_forward:
+    #   print("Moving forward!")
+    #  self.robot.set_right_motor_velocity(1.5)
+    # self.robot.set_left_motor_velocity(1.5)
 
 
-def spin(self) -> None:
-    """Spin the robot."""
-    self.sense()
-    self.plan()
-    self.act()
+    # else:
+    #   print("Stopping...")
+    #  self.robot.set_right_motor_velocity(0)
+    # self.robot.set_left_motor_velocity(0)
+
+
+    def spin(self) -> None:
+        """Spin the robot."""
+        self.sense()
+        self.plan()
+        self.act()
