@@ -266,7 +266,7 @@ class Robot:
 
         if abs(self.target_angle) < 0.01:
             self.moving_forward = True
-        # print(f"Moving straight ({self.target_angle}))
+        #  print(f"Moving straight ({self.target_angle})")
         if self.distance_to_target < 0.1:  # 0.1m = 10cm
             self.moving_forward = False
             self.turning_left = False
