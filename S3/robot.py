@@ -163,8 +163,6 @@ class Robot:
     def detect_triangle(self) -> None:
         # if self.lidar_data is None:
         #   return
-        self.get_robot_pose()
-        self.detect_triangle()
 
         points = []
         for i, distance in enumerate(self.lidar_data):
@@ -195,13 +193,11 @@ class Robot:
         of action for the robot.
         """
         self.get_robot_pose()
-        self.detect_triangle()
-
         if self.target_x is None:
             self.detect_triangle()
             self.target_y = -self.target_y
 
-        if self.target_x is None or -self.target_y is None:
+        if self.target_x is None or - self.target_y is None:
             print("No target found. Waiting for detection...")
             self.moving_forward = False
             self.turning_left = True
@@ -219,7 +215,7 @@ class Robot:
 
         angle_diff = (self.target_angle - self.theta + np.pi) % (2 * np.pi) - np.pi
 
-        if abs(angle_diff) > 0.05 and self.distance_to_target is None:
+        if abs(angle_diff) > 0.03 and self.distance_to_target is None:
             self.moving_forward = False
             self.turning_left = angle_diff > 0
             self.turning_right = not self.turning_left
@@ -256,7 +252,6 @@ class Robot:
                 self.left_velocity = 0
                 self.right_velocity = 0
 
-
     # minu lisatud
     def calculate_target_angle(self):
         pass
@@ -267,13 +262,13 @@ class Robot:
 
         if abs(self.target_angle) < 0.01:
             self.moving_forward = True
-        #  print(f"Moving straight ({self.target_angle})")
+        print(f"Distance to target: {self.distance_to_target}")
         if self.distance_to_target < 0.1:  # 0.1m = 10cm
             self.moving_forward = False
             self.turning_left = False
             self.turning_right = False
             print("Reached the target. Stopping.", flush=True)
-        return math.sqrt((delta_x[0] - delta_y[0] ** 2 + (delta_x[1] - delta_y[1] ** 2)))
+
 
     def act(self) -> None:
         """Execute planned actions.
