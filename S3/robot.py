@@ -182,7 +182,7 @@ class Robot:
 
             if abs(d1 - d2) < 0.05 and abs(d2 - d3) < 0.05:
                 self.triangle_vertex = C
-                self.target_x, self.target_y = C
+                self.target_x, -self.target_y = C
                 print(f"Kolmnurga tipp leitud: {self.target_x}, {self.target_y}")
 
     # minu lisatud
@@ -256,12 +256,12 @@ class Robot:
     # minu lisatud
     def distance(self, delta_x=None, delta_y=None):
         # Roboti ja punkti kaugus
-        distance_to_target = math.sqrt(delta_x ** 2 + delta_y ** 2)
+        self.distance_to_target = math.sqrt(delta_x ** 2 + delta_y ** 2)
 
         if abs(self.target_angle) < 0.01:
             self.moving_forward = True
         # print(f"Moving straight ({self.target_angle}))
-        if distance_to_target < 0.1:  # 0.1m = 10cm
+        if self.distance_to_target < 0.1:  # 0.1m = 10cm
             self.moving_forward = False
             self.turning_left = False
             self.turning_right = False
