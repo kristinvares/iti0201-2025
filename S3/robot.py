@@ -148,15 +148,11 @@ class Robot:
 
         if self.turning_left:
             print("Turning left to align with target...")
-            self.robot.set_left_motor_velocity(self.right_velocity) # sulgudes -0.5
-            self.robot.set_right_motor_velocity(self.left_velocity) # sulgudes 0.5
+            self.right_velocity = -0.5
+            self.left_velocity = 0.5
 
         elif self.turning_right:
             print("Turning right to align with target...")
-            # need read kustuta ära
-            self.robot.set_left_motor_velocity(self.left_velocity)
-            self.robot.set_right_motor_velocity(self.right_velocity - 0.5)
-            # need read aseta 157,158 rea juurde
             # actis kutsutakse välja (self.left_velocity) ja (self.right_velocity) sisu välja, mis on real 167 ja 168
             self.left_velocity = 0.5
             self.right_velocity = -0.5
@@ -169,15 +165,6 @@ class Robot:
             else:
                 self.left_velocity = 0
                 self.right_velocity = 0
-        self.robot.set_right_motor_velocity(self.right_velocity) # sulgudes 1.5
-        self.robot.set_left_motor_velocity(self.left_velocity) # sulgudes 1.5
-
-        else:
-        print("Stopping...")
-        self.robot.set_right_motor_velocity(self.right_velocity) #sulgudes 0
-        self.robot.set_left_motor_velocity(self.left_velocity) #sulgudes 0
-
-
 
 # angle oli nullilähedane. Robot kaugus ja punkti kaugus väiksem kui 10cm
 # vaata videos kujutisi
