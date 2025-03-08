@@ -256,6 +256,7 @@ class Robot:
                 self.left_velocity = 0
                 self.right_velocity = 0
 
+
     # minu lisatud
     def calculate_target_angle(self):
         pass
