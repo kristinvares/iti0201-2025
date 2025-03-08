@@ -195,7 +195,7 @@ def get_triangle_vertex_coordinates(self) -> tuple | None:
         self.get_robot_pose()
         self.detect_triangle()
 
-        if self.target_x is None or self.target_y is None:
+        if self.target_x is None or - self.target_y is None:
             print("No target found. Waiting for detection...")
             self.moving_forward = False
             self.turning_left = True
