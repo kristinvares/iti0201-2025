@@ -213,7 +213,7 @@ class Robot:
 
         angle_diff = (self.target_angle - self.theta + np.pi) % (2 * np.pi) - np.pi
 
-        if abs(angle_diff) > 0.15:
+        if abs(angle_diff) > 0.05 and self.distance_to_target is None:
             self.moving_forward = False
             self.turning_left = angle_diff > 0
             self.turning_right = not self.turning_left
@@ -227,6 +227,8 @@ class Robot:
 
         print(
             f"Moving: {self.moving_forward} | Turning Left: {self.turning_left} | Turning Right: {self.turning_right}")
+
+        self.distance(delta_x, delta_y)
 
         if self.turning_left:
             print("Turning left to align with target...")
