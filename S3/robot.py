@@ -84,8 +84,9 @@ class Robot:
         self.right_ticks = self.robot.get_right_motor_encoder_ticks()
 
     def detect_triangle(self) -> None:
-        if self.lidar_data is None:
-            return
+        #if self.lidar_data is None:
+         #   return
+
 
         points = []
         for i, distance in enumerate(self.lidar_data):
@@ -118,7 +119,7 @@ class Robot:
             self.moving_forward = False
             self.turning_left = True
             self.turning_right = False
-            return
+            return self.detect_triangle()
 
         delta_x = self.target_x - self.robot_x
         delta_y = self.target_y - self.robot_y
@@ -168,6 +169,8 @@ class Robot:
 
     # angle oli nullilähedane. Robot kaugus ja punkti kaugus väiksem kui 10cm
     # vaata videos kujutisi
+    def calculate_target_angle(self):
+        direction_x =
     def distance(self, delta_x=None, delta_y=None):
         # Roboti ja punkti kaugus
         distance_to_target = math.sqrt(delta_x ** 2 + delta_y ** 2)
@@ -180,7 +183,7 @@ class Robot:
             self.turning_left = False
             self.turning_right = False
             print("Reached the target. Stopping.", flush=True)
-            return
+        return math.sqrt((delta_x[0] - delta_y[0] ** 2 + (delta_x[1] - delta_y[1] ** 2)))
 
 
     def act(self) -> None:
