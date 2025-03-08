@@ -10,9 +10,15 @@ class Robot:
     def __init__(self, robot: object) -> None:
         """Class initializer."""
         self.robot = robot
+        self.detected_objects = []
+
         self.WHEEL_BASE = 0.233
-        self.WHEEL_RADIUS = 0.03575
+        self.TRACK_WIDTH = self.WHEEL_BASE
         self.TICKS_PER_RADIANS = 508.8 / (2 * math.pi)
+        self.WHEEL_RADIUS = 0.03575
+
+        self.start_orientation = None
+        self.theta = 0.0
 
         self.robot_x = 0.0
         self.robot_y = 0.0
@@ -44,6 +50,67 @@ class Robot:
 
         self.distance_to_target = None
 
+    def get_triangle_vertex_coordinates(self) -> tuple | None:
+        """Look for sudden changes in LIDAR data that indicate cylinders."""
+        self.detected_objects = []
+        start_index = None
+
+        threshold = 0.1
+        object_size_min = 1
+
+        if self.lidar_data is not None:
+            for i in range(1, len(self.lidar_data)):
+                if self.lidar_data[i] == float('inf') or self.lidar_data[i - 1] == float('inf'):
+                    start_index = None
+                    continue
+
+                delta = self.lidar_data[i] - self.lidar_data[i - 1]
+
+                if start_index is None and abs(delta) > threshold and delta < 0:
+                    start_index = i
+
+                elif start_index is not None and abs(delta) > threshold and delta > 0:
+                    end_index = i - 1
+
+                    if abs(end_index - start_index) >= object_size_min:
+                        object_values = self.lidar_data[start_index:end_index]
+                        distance = np.min(object_values)
+                        index = np.argmin(object_values)
+                        center_index = start_index + index
+
+                        angle = (center_index / len(self.lidar_data)) * (2 * np.pi)
+                        self.detected_objects.append((distance, angle))
+
+                    start_index = None
+
+        obj_coordinates_robot = []
+        obj_coordinates_world = []
+        for object in self.detected_objects:
+            x__robot_position = -(object[0] * math.sin(object[1]))
+            y_robot_position = -(object[0] * math.cos(object[1]))
+            obj_coordinates_robot.append((x__robot_position, y_robot_position))
+
+        for object in obj_coordinates_robot:
+            x_world = (self.robot_x + object[0] * math.cos(self.theta) - object[1] * math.sin(self.theta))
+            y_world = (self.robot_y + object[0] * math.sin(self.theta) + object[1] * math.cos(self.theta))
+            obj_coordinates_world.append((x_world, y_world))
+
+        if len(obj_coordinates_world) < 2:
+            return None
+
+        x1, y1 = obj_coordinates_world[0]
+        x2, y2 = obj_coordinates_world[1]
+
+        dx = (math.sqrt(3) / 2) * (y2 - y1)
+        dy = (math.sqrt(3) / 2) * (x2 - x1)
+
+        x_middle = (x1 + x2) / 2
+        y_middle = (y1 + y2) / 2
+
+        g_1 = (x_middle + dx, y_middle - dy)
+        g_2 = (x_middle - dx, y_middle + dy)
+        return g_1, g_2
+
     def get_robot_pose(self) -> tuple:
         """Return the current robot pose."""
         delta_time = self.current_time - self.previous_time
@@ -54,6 +121,9 @@ class Robot:
 
         left_ticks = self.robot.get_left_motor_encoder_ticks()
         right_ticks = self.robot.get_right_motor_encoder_ticks()
+
+        delta_left_ticks = left_ticks - self.prev_left_ticks
+        delta_right_ticks = right_ticks - self.prev_right_ticks
 
         delta_left_ticks = left_ticks - self.previous_left_ticks
         delta_right_ticks = right_ticks - self.previous_right_ticks
@@ -82,6 +152,10 @@ class Robot:
         self.current_time = self.robot.get_time()
         self.left_ticks = self.robot.get_left_motor_encoder_ticks()
         self.right_ticks = self.robot.get_right_motor_encoder_ticks()
+
+        if self.start_orientation is None:
+            self.start_orientation = self.robot.get_orientation()
+        self.theta = self.robot.get_orientation() - self.start_orientation
 
     def detect_triangle(self) -> None:
         #if self.lidar_data is None:
