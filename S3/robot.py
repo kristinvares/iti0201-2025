@@ -169,7 +169,6 @@ class Robot:
             else:
                 print("sense: no objects found, continuing search...")
 
-
     def plan(self) -> None:
         """Plan the robot's actions.
 
@@ -225,7 +224,6 @@ class Robot:
         else:
             self.left_speed = 0
             self.right_speed = 0
-
 
     def act(self) -> None:
         """Execute planned actions.
