@@ -206,7 +206,7 @@ class Robot:
         if final_distance > 0.1:
             distance_y = nearest_vertex[0][1]
             distance_x = nearest_vertex[0][0]
-            goal = math.atan2(distance_x, distance_y)
+            goal = math.atan2(distance_y, distance_x)
             print("The goal angle is = ", goal)
             orientation_offset = goal - self.theta
             orientation_offset = (orientation_offset + math.pi) % (2 * math.pi) - math.pi
