@@ -43,7 +43,7 @@ class Robot:
         if not bounding_boxes:
             return None
 
-        height, width = self.image.shape
+        height, width = self.image.shape[:2]
         fov = self.fov
 
         object_locations = []
