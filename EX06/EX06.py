@@ -174,4 +174,3 @@ class Robot:
         self.sense()
         self.plan()
         self.act()
-
