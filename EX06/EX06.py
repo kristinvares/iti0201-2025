@@ -2,7 +2,6 @@
 from __future__ import annotations
 from matplotlib import pyplot as plt
 import numpy as np
-from scipy.ndimage import label
 
 
 class Robot:
@@ -12,14 +11,12 @@ class Robot:
         """Class initializer.
 
         Args:
-          robot (object): An instance of a Turtlebot-like robot interface.
+            robot (object): An instance of a Turtlebot-like robot interface.
         """
         self.robot = robot
-
         self.image = None
         self.fov = None
         self.object = []
-
 
     def get_object_location_list(self) -> list | None:
         """Calculate the coordinates for detected object center and corresponding angle.
@@ -48,12 +45,13 @@ class Robot:
 
         object_locations = []
         for x_min, x_max, y_min, y_max in bounding_boxes:
+            # Centroidi arvutamine
             x_center = (x_min + x_max) / 2
-            y_center = (y_min + y_max) / 2  # centroid otsimine basiacally see kesk punk obj
+            y_center = (y_min + y_max) / 2
 
             angle = ((x_center - width / 2) / (width / 2)) * (fov / 2)
-
             object_locations.append([x_center, y_center, angle])
+
         return object_locations if object_locations else None
 
     def find_blobs(self, mask):
@@ -69,14 +67,15 @@ class Robot:
         lable_id = 1
         to_visit = []
         neighbours = ((-1, 0), (1, 0), (0, -1), (0, 1))
+
         for y, x in np.argwhere(mask):
             if labled_mask[y, x] == 0:
                 labled_mask[y, x] = lable_id
                 to_visit.append((y, x))
                 while to_visit:
                     current_y, current_x = to_visit.pop()
-                    for direction_y, direction_x in neighbours:
-                        new_y, new_x = current_y + direction_y, current_x + direction_x
+                    for dy, dx in neighbours:
+                        new_y, new_x = current_y + dy, current_x + dx
                         if 0 <= new_y < height and 0 <= new_x < width:
                             if mask[new_y, new_x] and labled_mask[new_y, new_x] == 0:
                                 labled_mask[new_y, new_x] = lable_id
@@ -104,26 +103,30 @@ class Robot:
         if self.image is None:
             return None
 
-
-        blue_channel =self.image[:, :, 0]
-        green_channel =self.image[:, :, 1]
-        red_channel =self.image[:, :, 2]
+        blue_channel = self.image[:, :, 0]
+        green_channel = self.image[:, :, 1]
+        red_channel = self.image[:, :, 2]
         threshold = 50
+
         mask = (blue_channel > green_channel + threshold) & (blue_channel > red_channel + threshold)
         labled_mask, lable_count = self.find_blobs(mask)
-        #labled_mask, lable_count = label(mask)  # testimis jaoks
+        # labled_mask, lable_count = label(mask)  # testimis jaoks
+
         if lable_count == 0:
             return None
+
         blobs = []
         for i in range(1, lable_count + 1):
             blobs_pixels = np.column_stack(np.where(labled_mask == i))
             if blobs_pixels.size == 0:
                 return None
+
             print(blobs_pixels.shape)
             print(np.min(blobs_pixels[:, 1]))
             print(np.max(blobs_pixels[:, 1]))
             print(np.min(blobs_pixels[:, 0]))
             print(np.max(blobs_pixels[:, 0]))
+
             y_min, x_min = blobs_pixels.min(axis=0)
             y_max, x_max = blobs_pixels.max(axis=0)
             blobs.append((x_min, x_max, y_min, y_max))
@@ -131,7 +134,9 @@ class Robot:
         plt.imshow(self.image)
         for box in blobs:
             x_min, x_max, y_min, y_max = box
-            plt.plot([x_min, x_max, x_max, x_min, x_min], [y_min, y_min, y_max, y_max, y_min] , 'r-', linewidth=5)
+            plt.plot([x_min, x_max, x_max, x_min, x_min],
+                     [y_min, y_min, y_max, y_max, y_min],
+                     'r-', linewidth=5)
         # plt.axis("off")
         plt.show()
 
@@ -169,3 +174,4 @@ class Robot:
         self.sense()
         self.plan()
         self.act()
+
