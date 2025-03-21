@@ -15,7 +15,7 @@ class Robot:
             robot (object): An instance of a Turtlebot-like robot interface.
         """
         self.robot = robot
-        self.blue_cubes = []
+        self.blue_cubes = None
 
         self.image = None
         self.fov = None
