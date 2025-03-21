@@ -1,6 +1,11 @@
 """EX07: Object Detection."""
 from __future__ import annotations
+
+from pickletools import string1
+
+from matplotlib import pyplot as plt
 import numpy as np
+
 
 
 class Robot:
@@ -15,36 +20,114 @@ class Robot:
         self.robot = robot
         self.blue_cubes = None
 
-    def get_object_bounding_box_list(self):
-        x_min = 0
-        x_max = 1
-        y_min = 0
-        y_max = 1
-        # [(x_min, x_max, y_min, y_max), ...].
-        return [(x_min, x_max, y_min, y_max)]
+        self.image = None
+        self.fov = None
+        self.result = []
+
+    def find_blobs(self, mask):
+        """
+        Flood fill algorithm to find the blue object.
+
+        :param mask:
+        :return:
+        """
+        height, width = mask.shape
+        labled_mask = np.zeros_like(mask, dtype=np.uint32)
+
+        lable_id = 1
+        to_visit = []
+        neighbours = ((-1, 0), (1, 0), (0, -1), (0, 1))
+
+        for y, x in np.argwhere(mask):
+            if labled_mask[y, x] == 0:
+                labled_mask[y, x] = lable_id
+                to_visit.append((y, x))
+                while to_visit:
+                    current_y, current_x = to_visit.pop()
+                    for dy, dx in neighbours:
+                        new_y, new_x = current_y + dy, current_x + dx
+                        if 0 <= new_y < height and 0 <= new_x < width:
+                            if mask[new_y, new_x] and labled_mask[new_y, new_x] == 0:
+                                labled_mask[new_y, new_x] = lable_id
+                                to_visit.append((new_y, new_x))
+                lable_id += 1
+
+        return labled_mask, lable_id - 1
+
+    def get_object_bounding_box_list(self) -> list | None:
+        """Calculate the bounding box for any detected blue object.
+
+        Logic:
+          - This method analyzes the camera image to detect blue-colored objects by
+            isolating the blue channel and applying a color threshold to identify blue
+            regions.
+          - The bounding boxes are returned as a list of tuples, where each tuple is
+            (x_min, x_max, y_min, y_max), representing the horizontal and vertical
+            limits of the detected object.
+
+        Returns:
+          A list of bounding boxes, each bounding box is represented as a tuple
+          [(x_min, x_max, y_min, y_max), ...].
+          Returns `None` if no objects are detected.
+        """
+        if self.image is None:
+            return None
+
+        blue_channel = self.image[:, :, 0]
+        green_channel = self.image[:, :, 1]
+        red_channel = self.image[:, :, 2]
+        threshold = 50
+
+        mask = (blue_channel > green_channel + threshold) & (blue_channel > red_channel + threshold)
+        labled_mask, lable_count = self.find_blobs(mask)
+        # labled_mask, lable_count = label(mask)  # testimis jaoks
+
+        if lable_count == 0:
+            return None
+
+        blobs = []
+        for i in range(1, lable_count + 1):
+            blobs_pixels = np.column_stack(np.where(labled_mask == i))
+            if blobs_pixels.size == 0:
+                return None
+
+            print(blobs_pixels.shape)
+            print(np.min(blobs_pixels[:, 1]))
+            print(np.max(blobs_pixels[:, 1]))
+            print(np.min(blobs_pixels[:, 0]))
+            print(np.max(blobs_pixels[:, 0]))
+
+            y_min, x_min = blobs_pixels.min(axis=0)
+            y_max, x_max = blobs_pixels.max(axis=0)
+            blobs.append((x_min, x_max, y_min, y_max))
+
+        plt.imshow(self.image)
+        for box in blobs:
+            x_min, x_max, y_min, y_max = box
+            plt.plot([x_min, x_max, x_max, x_min, x_min],
+                     [y_min, y_min, y_max, y_max, y_min],
+                     'r-', linewidth=5)
+        # plt.axis("off")
+        plt.show()
+
+        return blobs if blobs else None
 
     def update_cube_objects(self):
         boxes = self.get_object_bounding_box_list()
+        if boxes is None:
+            return None
         for box in boxes:
             x_min = box[0]
             x_max = box[1]
             y_min = box[2]
             y_max = box[3]
-            width = x_max - x_min + 1
-            height = y_max - y_min + 1
-            aspect_ratio = width / height
-            blue_channel_roi = self.image[x_min:x_max + 1, y_min:y_max + 1, 0]
-            green_channel_roi = self.image[x_min:x_max + 1, y_min:y_max + 1, 1]
-            red_channel_roi = self.image[x_min:x_max + 1, y_min:y_max + 1, 2]
-            threshold = 20
-            roi_mask = (blue_channel_roi > green_channel_roi + threshold) & (blue_channel_roi > red_channel_roi + threshold)
-            blue_pixels_count = np.sum(roi_mask)
-            total_pixel_count = width * height
-            color_ratio = blue_pixels_count / total_pixel_count
-            # seda peab täiendama, ise veel juurde kirjutama
-            self.blue_cubes.append(box)
 
+            x_side = x_max - x_min
+            y_side = y_max - y_min
 
+            if x_side == y_side:
+                self.result.append(box)
+        return self.result
 
     def get_cube_objects(self) -> list | None:
         """Return the bounding boxes for detected objects.
@@ -91,6 +174,8 @@ class Robot:
         """
         self.image = self.robot.get_camera_rgb_image()
         self.update_cube_objects()
+
+        self.fov = self.robot.get_camera_field_of_view()
 
     def plan(self) -> None:
         """Plan the robot's actions.
