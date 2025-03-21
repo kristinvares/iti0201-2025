@@ -121,8 +121,14 @@ class Robot:
             x_side = x_max - x_min
             y_side = y_max - y_min
 
-            if x_side == y_side:
-                self.blue_cubes = []
+            threshold = 50
+            diffrence = 0
+            if x_side > y_side:
+                diffrence = x_side - y_side
+            elif y_side > x_side:
+                diffrence = y_side - x_side
+
+            if diffrence <= threshold:
                 self.blue_cubes.append(box)
         return self.blue_cubes
 
