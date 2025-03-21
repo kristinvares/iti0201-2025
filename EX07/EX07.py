@@ -122,7 +122,7 @@ class Robot:
             y_side = y_max - y_min
 
             if x_side == y_side:
-                self.blue_cubes
+                self.blue_cubes.append(box)
         return self.blue_cubes
 
     def get_cube_objects(self) -> list | None:
