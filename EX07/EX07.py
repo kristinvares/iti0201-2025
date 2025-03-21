@@ -112,6 +112,7 @@ class Robot:
         boxes = self.get_object_bounding_box_list()
         if boxes is None:
             return None
+        something = []
         for box in boxes:
             print(box)
             x_min = box[0]
@@ -130,7 +131,8 @@ class Robot:
                 diffrence = y_side - x_side
 
             if diffrence <= threshold:
-                return box
+                something.append(box)
+        return something
 
     def get_cube_objects(self) -> list | None:
         """Return the bounding boxes for detected objects.
