@@ -19,7 +19,6 @@ class Robot:
 
         self.image = None
         self.fov = None
-        self.result = []
 
     def find_blobs(self, mask):
         """
@@ -131,8 +130,7 @@ class Robot:
                 diffrence = y_side - x_side
 
             if diffrence <= threshold:
-                self.result.append(box)
-        return self.result
+                return box
 
     def get_cube_objects(self) -> list | None:
         """Return the bounding boxes for detected objects.
@@ -168,9 +166,7 @@ class Robot:
             detected cubes.
             Returns `None` if no cubes are detected.
         """
-        if self.result is []:
-            return None
-        self.blue_cubes = self.result
+        self.blue_cubes = self.update_cube_objects()
         return self.blue_cubes
 
 
