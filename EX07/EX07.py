@@ -1,8 +1,5 @@
 """EX07: Object Detection."""
 from __future__ import annotations
-
-from pickletools import string1
-
 from matplotlib import pyplot as plt
 import numpy as np
 
@@ -18,11 +15,10 @@ class Robot:
             robot (object): An instance of a Turtlebot-like robot interface.
         """
         self.robot = robot
-        self.blue_cubes = None
+        self.blue_cubes = []
 
         self.image = None
         self.fov = None
-        self.result = []
 
     def find_blobs(self, mask):
         """
@@ -126,8 +122,8 @@ class Robot:
             y_side = y_max - y_min
 
             if x_side == y_side:
-                self.result.append(box)
-        return self.result
+                self.blue_cubes
+        return self.blue_cubes
 
     def get_cube_objects(self) -> list | None:
         """Return the bounding boxes for detected objects.
