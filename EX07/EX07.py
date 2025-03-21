@@ -168,6 +168,8 @@ class Robot:
             detected cubes.
             Returns `None` if no cubes are detected.
         """
+        if self.result is []:
+            return None
         self.blue_cubes = self.result
         return self.blue_cubes
 
