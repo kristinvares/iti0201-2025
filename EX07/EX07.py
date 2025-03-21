@@ -110,7 +110,6 @@ class Robot:
 
     def update_cube_objects(self):
         boxes = self.get_object_bounding_box_list()
-        self.blue_cubes = []
         if boxes is None:
             return None
         for box in boxes:
@@ -123,6 +122,7 @@ class Robot:
             y_side = y_max - y_min
 
             if x_side == y_side:
+                self.blue_cubes = []
                 self.blue_cubes.append(box)
         return self.blue_cubes
 
