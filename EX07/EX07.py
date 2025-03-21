@@ -123,7 +123,7 @@ class Robot:
             x_side = x_max - x_min
             y_side = y_max - y_min
 
-            threshold = 50
+            threshold = 20
             diffrence = 0
             if x_side > y_side:
                 diffrence = x_side - y_side
