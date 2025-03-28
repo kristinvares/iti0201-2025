@@ -1,5 +1,7 @@
 """C1."""
+from __future__ import annotations
 import math
+import numpy as np
 
 
 class Robot:
@@ -11,6 +13,7 @@ class Robot:
         Args:
             robot (object): An instance of a Turtlebot-like robot interface.
         """
+        self._handle_confirming_color = None
         self.detected_objects = []
         self.robot = robot
         self.state = "init"
@@ -70,7 +73,72 @@ class Robot:
         print(self.detected_objects)
         print(self.time)
 
-    # EX03 methods
+        self.image = self.robot.get_camera_rgb_image()
+        self.fov = self.robot.get_camera_field_of_view()
+
+        self.blue_object_angles = self._get_blue_object_angles()
+
+    def _get_blue_object_angles(self):
+        if self.image is None or self.fov is None:
+            return []
+
+        blue_channel = self.image[:, :, 0]
+        green_channel = self.image[:, :, 1]
+        red_channel = self.image[:, :, 2]
+        threshold = 50
+
+        mask = (blue_channel > green_channel + threshold) & (blue_channel > red_channel + threshold)
+        labeled_mask, label_count = self._find_blobs(mask)
+
+        if label_count == 0:
+            return []
+
+        height, width = self.image.shape[:2]
+        angles = []
+
+        for i in range(1, label_count + 1):
+            pixels = np.column_stack(np.where(labeled_mask == i))
+            if pixels.size == 0:
+                continue
+            y_min, x_min = pixels.min(axis=0)
+            y_max, x_max = pixels.max(axis=0)
+            x_center = (x_min + x_max) / 2
+
+            angle = ((x_center - width / 2) / (width / 2)) * (self.fov / 2)
+            angles.append(angle)
+
+        return angles
+
+    def find_blobs(self, mask):
+        """
+        Flood fill algorithm to find the blue object.
+
+        :param mask:
+        :return:
+        """
+        height, width = mask.shape
+        labled_mask = np.zeros_like(mask, dtype=np.uint32)
+
+        lable_id = 1
+        to_visit = []
+        neighbours = ((-1, 0), (1, 0), (0, -1), (0, 1))
+
+        for y, x in np.argwhere(mask):
+            if labled_mask[y, x] == 0:
+                labled_mask[y, x] = lable_id
+                to_visit.append((y, x))
+                while to_visit:
+                    current_y, current_x = to_visit.pop()
+                    for dy, dx in neighbours:
+                        new_y, new_x = current_y + dy, current_x + dx
+                        if 0 <= new_y < height and 0 <= new_x < width:
+                            if mask[new_y, new_x] and labled_mask[new_y, new_x] == 0:
+                                labled_mask[new_y, new_x] = lable_id
+                                to_visit.append((new_y, new_x))
+                lable_id += 1
+
+        return labled_mask, lable_id - 1
+
     def get_objects_range_list(self) -> list | None:
         """Return the detected objects range list.
 
@@ -117,7 +185,9 @@ class Robot:
             "turning_to_object": self._handle_turning,
             "approaching": self._handle_approaching,
             "fixing_trajectory": self._handle_fixing_trajectory,
-            "finished": self._handle_finished
+            "finished": self._handle_finished,
+            "confirming_color": self._handle_confirming_color,
+
         }
 
         if self.state in state_actions:
@@ -136,17 +206,47 @@ class Robot:
             print("I, FIND")
 
     def _handle_turning(self):
-        if 4.0 < self.detected_objects[0][1] < 5.5:
+        if not self.detected_objects:
+            self.state = "search"
+            return
+
+        distance, lidar_angle = self.detected_objects[0]
+
+        if 4.0 < lidar_angle < 5.5:
             self.left_velocity = -0.1
             self.right_velocity = 0.1
+            print("I, TURNING")
 
-        print("I, TURN")
-        if 4.7 < self.detected_objects[0][1] < 4.75:
-            self.state = "approaching"
-            print("I, APPROACH")
-        else:
+        if 4.7 < lidar_angle < 4.75:
+            self.state = "confirming_color"
+            print("I, READY TO CHECK COLOR")
+
+    def _handle_confirming_color(self):
+        self.left_velocity = 0
+        self.right_velocity = 0  # Stop while checking
+
+        if not self.image or not self.fov:
+            print("NO CAMERA DATA")
             self.state = "search"
-            print("I, GO BACK SEARCH")
+            return
+
+        self.blue_object_angles = self._get_blue_object_angles()
+
+        if not self.detected_objects:
+            self.state = "search"
+            return
+
+        _, lidar_angle = self.detected_objects[0]
+        angle_margin = 0.3  # radians
+
+        is_blue = any(abs(lidar_angle - angle) < angle_margin for angle in self.blue_object_angles)
+
+        if is_blue:
+            print("BLUE CONFIRMED")
+            self.state = "approaching"
+        else:
+            print("NOT BLUE — SEARCHING AGAIN")
+            self.state = "search"
 
     def _handle_approaching(self):
         self.left_velocity = 1
