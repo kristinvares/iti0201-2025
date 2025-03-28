@@ -13,7 +13,6 @@ class Robot:
         Args:
             robot (object): An instance of a Turtlebot-like robot interface.
         """
-        self._handle_confirming_color = None
         self.detected_objects = []
         self.robot = robot
         self.has_faced_object = False
