@@ -12,7 +12,10 @@ class Robot:
         Args:
             robot (object): An instance of a Turtlebot-like robot interface.
         """
+        self.velocity = None
         self.robot = robot
+        self.left_speed = 0
+        self.right_speed = 0
 
         self.image = None
         self.fov = None
@@ -136,6 +139,7 @@ class Robot:
         self.image = self.robot.get_camera_rgb_image()
         self.fov = self.robot.get_camera_field_of_view()
 
+
     def plan(self) -> None:
         """Plan the robot's actions.
 
@@ -149,6 +153,7 @@ class Robot:
         Perform the actions decided in the planning step, such as moving or
         interacting with the environment.
         """
+        self.velocity = 0
 
     def spin(self) -> None:
         """Spin the robot.
