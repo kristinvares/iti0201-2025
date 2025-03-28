@@ -16,6 +16,7 @@ class Robot:
         self._handle_confirming_color = None
         self.detected_objects = []
         self.robot = robot
+        self.has_faced_object = False
         self.state = "init"
         self.left_velocity = 0
         self.right_velocity = 0
@@ -208,9 +209,10 @@ class Robot:
     def _handle_turning(self):
         if not self.detected_objects:
             self.state = "search"
+            self.has_faced_object = False
             return
 
-        distance, lidar_angle = self.detected_objects[0]
+        _, lidar_angle = self.detected_objects[0]
 
         if 4.0 < lidar_angle < 5.5:
             self.left_velocity = -0.1
@@ -218,12 +220,20 @@ class Robot:
             print("I, TURNING")
 
         if 4.7 < lidar_angle < 4.75:
+            self.left_velocity = 0
+            self.right_velocity = 0
+            self.has_faced_object = True
             self.state = "confirming_color"
-            print("I, READY TO CHECK COLOR")
+            print("I, FACING OBJECT — READY TO CONFIRM COLOR")
 
     def _handle_confirming_color(self):
         self.left_velocity = 0
-        self.right_velocity = 0  # Stop while checking
+        self.right_velocity = 0  # Stay still
+
+        if not self.has_faced_object:
+            print("WAIT — Haven't turned yet")
+            self.state = "turning_to_object"
+            return
 
         if not self.image or not self.fov:
             print("NO CAMERA DATA")
@@ -237,15 +247,16 @@ class Robot:
             return
 
         _, lidar_angle = self.detected_objects[0]
-        angle_margin = 0.3  # radians
+        angle_margin = 0.3
 
         is_blue = any(abs(lidar_angle - angle) < angle_margin for angle in self.blue_object_angles)
 
         if is_blue:
-            print("BLUE CONFIRMED")
+            print("BLUE CONFIRMED — BEGIN APPROACH")
             self.state = "approaching"
         else:
-            print("NOT BLUE — SEARCHING AGAIN")
+            print("NOT BLUE — BACK TO SEARCH")
+            self.has_faced_object = False
             self.state = "search"
 
     def _handle_approaching(self):
