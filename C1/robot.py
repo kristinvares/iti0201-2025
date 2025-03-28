@@ -31,9 +31,10 @@ class Robot:
         self.left_motor_ticks = self.robot.get_left_motor_encoder_ticks()
         self.right_motor_ticks = self.robot.get_right_motor_encoder_ticks()
         self.lidar_object_detection()
-        self.image = self.robot.get_camera_rgb_image()
-        self.fov = self.robot.get_camera_field_of_view()
-        self.blue_object_angles = self._get_blue_object_angles()
+        if self.state == "search":
+            self.image = self.robot.get_camera_rgb_image()
+            self.fov = self.robot.get_camera_field_of_view()
+            self.blue_object_angles = self._get_blue_object_angles()
 
 
     def lidar_object_detection(self):
@@ -196,68 +197,17 @@ class Robot:
         self.left_velocity = -2.0
         self.right_velocity = 2.0
         print("SEARCH")
-        if 0.05 > self.blue_object_angles[0] > -0.05:
-            self.left_velocity = 0.0
-            self.right_velocity = 0.0
-            self.state = "approaching"
-            print("I, FIND")
+        if self.blue_object_angles is not None:
+            if 0.05 > self.blue_object_angles[0] > -0.05:
+                self.left_velocity = 0.0
+                self.right_velocity = 0.0
+                self.state = "approaching"
+                print("I, FIND")
 
-    def _handle_turning(self):
-        if not self.detected_objects:
-            self.state = "search"
-            self.has_faced_object = False
-            return
-
-        _, lidar_angle = self.detected_objects[0]
-
-        if 4.0 < lidar_angle < 5.5:
-            self.left_velocity = -1
-            self.right_velocity = 1
-            print("I, TURNING")
-
-        if 4.7 < lidar_angle < 4.75:
-            self.left_velocity = 0
-            self.right_velocity = 0
-            self.has_faced_object = True
-            self.state = "confirming_color"
-            print("I, FACING OBJECT — READY TO CONFIRM COLOR")
-
-    def _handle_confirming_color(self):
-        self.left_velocity = 0
-        self.right_velocity = 0
-
-        if not self.has_faced_object:
-            print("WAIT — Haven't turned yet")
-            self.state = "turning_to_object"
-            return
-
-        if self.image is None or self.fov is None:
-            print("NO CAMERA DATA")
-            self.state = "search"
-            return
-
-        #self.blue_object_angles = self._get_blue_object_angles()
-
-        if not self.detected_objects:
-            self.state = "search"
-            return
-
-        _, lidar_angle = self.detected_objects[0]
-        angle_margin = 0.3
-
-        is_blue = any(abs(lidar_angle - angle) < angle_margin for angle in self.blue_object_angles)
-
-        if is_blue:
-            print("BLUE CONFIRMED — STOPPING")
-            self.state = "finished"
-        else:
-            print("NOT BLUE — BACK TO SEARCH")
-            self.has_faced_object = False
-            self.state = "search"
 
     def _handle_approaching(self):
-        self.left_velocity = 1
-        self.right_velocity = 1
+        self.left_velocity = 1.5
+        self.right_velocity = 1.5
         if self.detected_objects:
             if 4.65 > self.detected_objects[0][1] > 4.8:
                 self.state = "fixing_trajectory"
@@ -272,12 +222,12 @@ class Robot:
         print("I, FIX")
         if self.detected_objects[0][1] < 4.65:
             print("I, LEFT")
-            self.left_velocity = -0.1
-            self.right_velocity = 0.1
+            self.left_velocity = -0.4
+            self.right_velocity = 0.4
         elif self.detected_objects[0][1] > 4.7:
             print("I, RIGHT")
-            self.left_velocity = 0.1
-            self.right_velocity = -0.1
+            self.left_velocity = 0.4
+            self.right_velocity = -0.4
         else:
             self.state = "approaching"
 
