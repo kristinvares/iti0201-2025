@@ -194,7 +194,7 @@ class Robot:
         self.left_velocity = -2.0
         self.right_velocity = 2.0
         print("SEARCH")
-        if self.blue_object_angles is not None:
+        if self.blue_object_angles != []:
             if 0.05 > self.blue_object_angles[0] > -0.05:
                 self.left_velocity = 0.0
                 self.right_velocity = 0.0
