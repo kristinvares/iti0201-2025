@@ -214,8 +214,8 @@ class Robot:
         _, lidar_angle = self.detected_objects[0]
 
         if 4.0 < lidar_angle < 5.5:
-            self.left_velocity = -0.1
-            self.right_velocity = 0.1
+            self.left_velocity = -1
+            self.right_velocity = 1
             print("I, TURNING")
 
         if 4.7 < lidar_angle < 4.75:
