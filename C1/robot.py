@@ -234,7 +234,7 @@ class Robot:
             self.state = "turning_to_object"
             return
 
-        if not self.image or not self.fov:
+        if self.image is None or self.fov is None:
             print("NO CAMERA DATA")
             self.state = "search"
             return
