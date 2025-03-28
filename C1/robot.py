@@ -228,7 +228,7 @@ class Robot:
 
     def _handle_confirming_color(self):
         self.left_velocity = 0
-        self.right_velocity = 0  # Stay still
+        self.right_velocity = 0
 
         if not self.has_faced_object:
             print("WAIT — Haven't turned yet")
@@ -252,8 +252,8 @@ class Robot:
         is_blue = any(abs(lidar_angle - angle) < angle_margin for angle in self.blue_object_angles)
 
         if is_blue:
-            print("BLUE CONFIRMED — BEGIN APPROACH")
-            self.state = "approaching"
+            print("BLUE CONFIRMED — STOPPING")
+            self.state = "finished"
         else:
             print("NOT BLUE — BACK TO SEARCH")
             self.has_faced_object = False
