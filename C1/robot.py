@@ -110,7 +110,7 @@ class Robot:
 
         return angles
 
-    def find_blobs(self, mask):
+    def _find_blobs(self, mask):
         """
         Flood fill algorithm to find the blue object.
 
