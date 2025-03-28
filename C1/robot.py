@@ -153,7 +153,9 @@ class Robot:
         Perform the actions decided in the planning step, such as moving or
         interacting with the environment.
         """
-        self.velocity = 0
+        self.robot.set_right_wheel_velocity(0)
+        self.robot.set_left_wheel_velocity(0)
+
 
     def spin(self) -> None:
         """Spin the robot.
