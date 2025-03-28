@@ -106,6 +106,7 @@ class Robot:
 
             angle = ((x_center - width / 2) / (width / 2)) * (self.fov / 2)
             angles.append(angle)
+        print("Blue object angles:", angles)
 
         return angles
 
