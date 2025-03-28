@@ -168,6 +168,7 @@ class Robot:
         angle_per_step = fov / num_points
         return index * angle_per_step
 
+
     def _filter_objects(self, objects):
         min_distance_threshold = 0.2
         valid_objects = []
