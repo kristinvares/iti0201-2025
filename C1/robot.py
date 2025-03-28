@@ -182,12 +182,9 @@ class Robot:
         """Plan the robot's actions."""
         state_actions = {
             "search": self._handle_search,
-            "turning_to_object": self._handle_turning,
             "approaching": self._handle_approaching,
             "fixing_trajectory": self._handle_fixing_trajectory,
             "finished": self._handle_finished,
-            "confirming_color": self._handle_confirming_color,
-
         }
 
         if self.state in state_actions:
