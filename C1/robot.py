@@ -1,6 +1,5 @@
 """C1."""
 from __future__ import annotations
-from matplotlib import pyplot as plt
 import numpy as np
 from scipy.ndimage import label
 
