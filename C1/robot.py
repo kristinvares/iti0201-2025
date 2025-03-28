@@ -16,7 +16,7 @@ class Robot:
         self.detected_objects = []
         self.robot = robot
         self.has_faced_object = False
-        self.state = "init"
+        self.state = "search"
         self.left_velocity = 0
         self.right_velocity = 0
 
@@ -30,7 +30,13 @@ class Robot:
         self.lidar = self.robot.get_lidar_range_list()
         self.left_motor_ticks = self.robot.get_left_motor_encoder_ticks()
         self.right_motor_ticks = self.robot.get_right_motor_encoder_ticks()
+        self.lidar_object_detection()
+        self.image = self.robot.get_camera_rgb_image()
+        self.fov = self.robot.get_camera_field_of_view()
+        self.blue_object_angles = self._get_blue_object_angles()
 
+
+    def lidar_object_detection(self):
         # EX03 stuff yep
         if self.lidar is None:
             print("Lidar data is NULL!")
@@ -70,13 +76,6 @@ class Robot:
                 in_object = False
 
         self.detected_objects = self._filter_objects(objects)
-        print(self.detected_objects)
-        print(self.time)
-
-        self.image = self.robot.get_camera_rgb_image()
-        self.fov = self.robot.get_camera_field_of_view()
-
-        self.blue_object_angles = self._get_blue_object_angles()
 
     def _get_blue_object_angles(self):
         if self.image is None or self.fov is None:
@@ -181,7 +180,6 @@ class Robot:
     def plan(self) -> None:
         """Plan the robot's actions."""
         state_actions = {
-            "init": self._handle_init,
             "search": self._handle_search,
             "turning_to_object": self._handle_turning,
             "approaching": self._handle_approaching,
@@ -194,16 +192,14 @@ class Robot:
         if self.state in state_actions:
             state_actions[self.state]()
 
-    def _handle_init(self):
-        print("HELLO, I ROBOT!")
-        self.state = "search"
-
     def _handle_search(self):
-        self.left_velocity = -5
-        self.right_velocity = 5
-        print("I, SEARCH")
-        if self.detected_objects:
-            self.state = "turning_to_object"
+        self.left_velocity = -2.0
+        self.right_velocity = 2.0
+        print("SEARCH")
+        if 0.05 > self.blue_object_angles[0] > -0.05:
+            self.left_velocity = 0.0
+            self.right_velocity = 0.0
+            self.state = "approaching"
             print("I, FIND")
 
     def _handle_turning(self):
@@ -240,7 +236,7 @@ class Robot:
             self.state = "search"
             return
 
-        self.blue_object_angles = self._get_blue_object_angles()
+        #self.blue_object_angles = self._get_blue_object_angles()
 
         if not self.detected_objects:
             self.state = "search"
