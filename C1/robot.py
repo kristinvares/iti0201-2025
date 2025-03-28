@@ -36,8 +36,8 @@ class Robot:
             self.fov = self.robot.get_camera_field_of_view()
             self.blue_object_angles = self._get_blue_object_angles()
 
-
     def lidar_object_detection(self):
+        """Lidar detection."""
         # EX03 stuff yep
         if self.lidar is None:
             print("Lidar data is NULL!")
@@ -168,7 +168,6 @@ class Robot:
         angle_per_step = fov / num_points
         return index * angle_per_step
 
-
     def _filter_objects(self, objects):
         min_distance_threshold = 0.2
         valid_objects = []
@@ -201,7 +200,6 @@ class Robot:
                 self.right_velocity = 0.0
                 self.state = "approaching"
                 print("I, FIND")
-
 
     def _handle_approaching(self):
         self.left_velocity = 1.5
