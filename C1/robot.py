@@ -1,7 +1,7 @@
 """C1."""
 from __future__ import annotations
 import numpy as np
-from scipy.ndimage import label
+
 
 class Robot:
     """Turtlebot robot."""
@@ -109,7 +109,6 @@ class Robot:
         mask = (blue_channel > green_channel) + threshold & (blue_channel > red_channel) + threshold
 
         labled_mask, lable_count = self.find_blobs(mask)
-        labled_mask, lable_count = label(mask)  # testimis jaoks
         if lable_count == 0:
             return None
         blobs = []
@@ -125,13 +124,6 @@ class Robot:
             y_min, x_min = blobs_pixels.min(axis=0)
             y_max, x_max = blobs_pixels.max(axis=0)
             blobs.append((x_min, x_max, y_min, y_max))
-
-        plt.imshow(self.image)
-        for box in blobs:
-            x_min, x_max, y_min, y_max = box
-            plt.plot([x_min, x_max, x_max, x_min, x_min], [y_min, y_min, y_max, y_max, y_min] , 'r-', linewidth=5)
-        # plt.axis("off")
-        plt.show()
 
         return blobs if blobs else None
 
