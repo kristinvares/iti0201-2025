@@ -198,8 +198,8 @@ class Robot:
         self.state = "search"
 
     def _handle_search(self):
-        self.left_velocity = -0.5
-        self.right_velocity = 0.5
+        self.left_velocity = -5
+        self.right_velocity = 5
         print("I, SEARCH")
         if self.detected_objects:
             self.state = "turning_to_object"
