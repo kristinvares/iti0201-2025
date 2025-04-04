@@ -245,6 +245,7 @@ class Robot:
         self.right_velocity = 0
         print(f"FINISHED: {self.color_order[self.current_color_index]}")
         self.reset_detection_data()
+        self.current_color_index = (self.current_color_index + 1) % len(self.color_order)
         self.state = "search"
 
     def reset_detection_data(self):
