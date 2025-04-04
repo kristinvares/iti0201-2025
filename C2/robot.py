@@ -175,6 +175,13 @@ class Robot:
         """
         return self.detected_objects if self.detected_objects else None
 
+    def get_object_near_angle(self, target_angle, angle_tolerance=0.2):
+        """Lidar distance and camera angle check."""
+        for distance, angle in self.detected_objects:
+            if abs(angle - (target_angle % (2 * math.pi))) < angle_tolerance:
+                return distance
+        return None
+
     def _get_angle(self, index):
         num_points = len(self.range_list)
         fov = 2 * math.pi
@@ -217,15 +224,14 @@ class Robot:
     def _handle_approaching(self):
         self.left_velocity = 1.5
         self.right_velocity = 1.5
-        if self.detected_objects:
-            if 4.65 > self.detected_objects[0][1] > 4.8:
-                self.state = "fixing_trajectory"
-        if self.detected_objects and self.detected_objects[0][0] < 0.3:
-            self.state = "finished"
-            print("I, FINISHED")
-        elif not self.detected_objects:
-            self.state = "search"
-            print("fked up situation")
+
+        if self.color_object_angles:
+            target_angle = self.color_object_angles[0]
+            object_distance = self.get_object_near_angle(target_angle)
+
+            if object_distance is not None and object_distance < 0.3:
+                self.state = "finished"
+                print("I, FINISHED with", self.color_order[self.current_color_index])
 
     def _handle_fixing_trajectory(self):
         print("I, FIX")
