@@ -84,7 +84,7 @@ class Robot:
 
         self.detected_objects = self._filter_objects(objects)
 
-    def _get_color_object_angles(self):
+    def _get_color_object_angles(self, color: str):
         if self.image is None or self.fov is None:
             return []
 
@@ -93,11 +93,11 @@ class Robot:
         red_channel = self.image[:, :, 2]
         threshold = 50
 
-        if self.current_color == "blue":
+        if color == "blue":
             mask = (blue_channel > green_channel + threshold) & (blue_channel > red_channel + threshold)
-        elif self.current_color == "red":
+        elif color == "red":
             mask = (red_channel > green_channel + threshold) & (red_channel > blue_channel + threshold)
-        elif self.current_color == "yellow":
+        elif color == "yellow":
             mask = (red_channel > blue_channel + threshold) & (green_channel > blue_channel + threshold)
         else:
             return []
