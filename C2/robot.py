@@ -220,7 +220,7 @@ class Robot:
         if self.detected_objects:
             if 4.65 > self.detected_objects[0][1] > 4.8:
                 self.state = "fixing_trajectory"
-        if self.detected_objects and self.detected_objects[0][0] < 0.3:
+        if self.detected_objects and self.detected_objects[0][0] < 1:
             self.state = "finished"
             print("I, FINISHED")
         elif not self.detected_objects:
