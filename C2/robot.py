@@ -13,12 +13,17 @@ class Robot:
         Args:
             robot (object): An instance of a Turtlebot-like robot interface.
         """
+        self.current_color = None
         self.detected_objects = []
         self.robot = robot
         self.has_faced_object = False
         self.state = "search"
         self.left_velocity = 0
         self.right_velocity = 0
+        self.color_order = ["blue", "red", "yellow"]
+        self.current_color_index = 0
+        self.color_object_angles = []
+
 
     def sense(self) -> None:
         """Gather sensor data.
@@ -34,7 +39,8 @@ class Robot:
         if self.state == "search":
             self.image = self.robot.get_camera_rgb_image()
             self.fov = self.robot.get_camera_field_of_view()
-            self.blue_object_angles = self._get_blue_object_angles()
+            self.current_color = self.color_order[self.current_color_index]
+            self.color_object_angles = self._get_color_object_angles(self.current_color)
 
     def lidar_object_detection(self):
         """Lidar detection."""
@@ -78,7 +84,7 @@ class Robot:
 
         self.detected_objects = self._filter_objects(objects)
 
-    def _get_blue_object_angles(self):
+    def _get_color_object_angles(self):
         if self.image is None or self.fov is None:
             return []
 
@@ -87,7 +93,14 @@ class Robot:
         red_channel = self.image[:, :, 2]
         threshold = 50
 
-        mask = (blue_channel > green_channel + threshold) & (blue_channel > red_channel + threshold)
+        if self.current_color == "blue":
+            mask = (blue_channel > green_channel + threshold) & (blue_channel > red_channel + threshold)
+        elif self.current_color == "red":
+            mask = (red_channel > green_channel + threshold) & (red_channel > blue_channel + threshold)
+        elif self.current_color == "yellow":
+            mask = (red_channel > blue_channel + threshold) & (green_channel > blue_channel + threshold)
+        else:
+            return []
         labeled_mask, label_count = self._find_blobs(mask)
 
         if label_count == 0:
@@ -193,13 +206,13 @@ class Robot:
     def _handle_search(self):
         self.left_velocity = -2.0
         self.right_velocity = 2.0
-        print("SEARCH")
-        if self.blue_object_angles != []:
-            if 0.05 > self.blue_object_angles[0] > -0.05:
+        print("SEARCHING:", self.color_order[self.current_color_index])
+        if self.color_object_angles:
+            if -0.05 < self.color_object_angles[0] < 0.05:
                 self.left_velocity = 0.0
                 self.right_velocity = 0.0
                 self.state = "approaching"
-                print("I, FIND")
+                print("FOUND:", self.color_order[self.current_color_index])
 
     def _handle_approaching(self):
         self.left_velocity = 1.5
@@ -230,7 +243,9 @@ class Robot:
     def _handle_finished(self):
         self.left_velocity = 0
         self.right_velocity = 0
-        print("I, END(myself)")
+        print("FINISHED:", self.color_order[self.current_color_index])
+        self.current_color_index = (self.current_color_index + 1) % len(self.color_order)
+        self.state = "search"
 
     def act(self) -> None:
         """Execute planned actions. Perform the actions decided in the planning step, such as moving or interacting with the environment."""
