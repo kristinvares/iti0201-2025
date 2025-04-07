@@ -240,16 +240,21 @@ class Robot:
             self.search_timer = 0
 
     def _handle_approaching(self):
-        self.left_velocity = 3
-        self.right_velocity = 3
+        self.left_velocity = 1.5
+        self.right_velocity = 1.5
 
         if not self.range_list or not isinstance(self.range_list, list):
             return
 
-        center_index = len(self.range_list) // 4
-        angle_span = int((10 / 360) * len(self.range_list) / 2)
+        num_measurements = len(self.range_list)
+        degrees_per_step = 360 / num_measurements
+        center_index = int(90 / degrees_per_step)
+        angle_span = int(5 / degrees_per_step)
 
-        front_values = self.range_list[center_index - angle_span: center_index + angle_span + 1]
+        start = max(center_index - angle_span, 0)
+        end = min(center_index + angle_span + 1, num_measurements)
+
+        front_values = self.range_list[start:end]
         valid = [d for d in front_values if d is not None and d != float('inf')]
 
         if valid and min(valid) < 0.5:
