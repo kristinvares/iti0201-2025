@@ -3,8 +3,6 @@ from __future__ import annotations
 import math
 import numpy as np
 
-from S3.abiõppejõu_abiga_reedene_kood import distance
-
 
 class Robot:
     """Turtlebot robot."""
