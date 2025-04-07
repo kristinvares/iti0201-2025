@@ -24,7 +24,8 @@ class Robot:
         self.current_color_index = 0
         self.color_object_angles = []
 
-        self.search_timer = 0
+        self.previous_time = 0.0
+        self.search_timer = 0.0
         self.max_search_duration = 5.0
 
 
@@ -223,13 +224,16 @@ class Robot:
         self.reset_detection_data()
 
     def handle_no_colour(self):
-        """Check if the current target color is missing too long, and skip it."""
-        timestep = self.robot.get_time_step() / 1000.0  # ms → s
+        """Check if the current color is missing too long and skip it."""
+        current_time = self.robot.get_time()
+        timestep = current_time - self.previous_time
+        self.previous_time = current_time
 
         if not self.color_object_angles:
             self.search_timer += timestep
+            print(f"Looking for {self.current_color}... [{self.search_timer:.2f}s elapsed]")
             if self.search_timer > self.max_search_duration:
-                print(f"SKIPPING color: {self.color_order[self.current_color_index]} – not found")
+                print(f"Skipping {self.current_color} – not found in time")
                 self._next_color()
                 self.search_timer = 0
         else:
