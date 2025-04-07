@@ -3,6 +3,8 @@ from __future__ import annotations
 import math
 import numpy as np
 
+from S3.abiõppejõu_abiga_reedene_kood import distance
+
 
 class Robot:
     """Turtlebot robot."""
@@ -246,18 +248,9 @@ class Robot:
         if not self.range_list or not isinstance(self.range_list, list):
             return
 
-        num_measurements = len(self.range_list)
-        degrees_per_step = 360 / num_measurements
-        center_index = int(90 / degrees_per_step)
-        angle_span = int(5 / degrees_per_step)
+        front_distance = self.lidar[-len(self.lidar) // 4]
 
-        start = max(center_index - angle_span, 0)
-        end = min(center_index + angle_span + 1, num_measurements)
-
-        front_values = self.range_list[start:end]
-        valid = [d for d in front_values if d is not None and d != float('inf')]
-
-        if valid and min(valid) < 0.5:
+        if front_distance < 0.3:
             self.state = "finished"
             print("I, FINISHED")
 
