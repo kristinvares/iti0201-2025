@@ -215,13 +215,12 @@ class Robot:
         if self.color_object_angles:
             if -0.05 < self.color_object_angles[0] < 0.05:
                 self.left_velocity = 0.0
-                self.right_veloscity = 0.0
+                self.right_velocity = 0.0
                 self.state = "approaching"
                 print("FOUND:", self.color_order[self.current_color_index])
 
     def _next_color(self):
         self.current_color_index = (self.current_color_index + 1) % len(self.color_order)
-        self.reset_detection_data()
 
     def handle_no_colour(self):
         """Check if the current color is missing too long and skip it."""
@@ -235,6 +234,7 @@ class Robot:
             if self.search_timer > self.max_search_duration:
                 print(f"Skipping {self.current_color} – not found in time")
                 self._next_color()
+                self.reset_detection_data()
                 self.search_timer = 0
         else:
             self.search_timer = 0
