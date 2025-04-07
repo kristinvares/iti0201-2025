@@ -213,7 +213,7 @@ class Robot:
         self.right_velocity = 2.0
         print("SEARCHING:", self.color_order[self.current_color_index])
         if self.color_object_angles:
-            if -0.15 < self.color_object_angles[0] < 0.15:
+            if -0.1 < self.color_object_angles[0] < 0.1:
                 self.left_velocity = 0.0
                 self.right_velocity = 0.0
                 self.state = "approaching"
