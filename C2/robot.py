@@ -254,6 +254,7 @@ class Robot:
             self.state = "finished"
             print("I, FINISHED")
 
+
     def _handle_fixing_trajectory(self):
         print("I, FIX")
         if self.detected_objects[0][1] < 4.65:
