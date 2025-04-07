@@ -243,15 +243,17 @@ class Robot:
         self.left_velocity = 1.5
         self.right_velocity = 1.5
 
-        if not self.range_list or not isinstance(self.range_list, list):
+        if not self.range_list:
             return
 
-        front_distance = self.lidar[-len(self.lidar) // 4]
+        center_index = 480
+        span = 9
+        front_values = self.range_list[center_index - span: center_index + span + 1]
+        valid = [d for d in front_values if d is not None and d != float('inf')]
 
-        if front_distance < 0.3:
+        if valid and min(valid) < 0.4:
             self.state = "finished"
             print("I, FINISHED")
-
 
     def _handle_fixing_trajectory(self):
         print("I, FIX")
