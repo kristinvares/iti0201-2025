@@ -24,6 +24,9 @@ class Robot:
         self.current_color_index = 0
         self.color_object_angles = []
 
+        self.search_timer = 0
+        self.max_search_duration = 5.0
+
 
     def sense(self) -> None:
         """Gather sensor data.
@@ -41,6 +44,7 @@ class Robot:
             self.fov = self.robot.get_camera_field_of_view()
             self.current_color = self.color_order[self.current_color_index]
             self.color_object_angles = self._get_color_object_angles(self.current_color)
+            self.handle_no_colour()
 
     def lidar_object_detection(self):
         """Lidar detection."""
@@ -210,9 +214,26 @@ class Robot:
         if self.color_object_angles:
             if -0.05 < self.color_object_angles[0] < 0.05:
                 self.left_velocity = 0.0
-                self.right_velocity = 0.0
+                self.right_veloscity = 0.0
                 self.state = "approaching"
                 print("FOUND:", self.color_order[self.current_color_index])
+
+    def _next_color(self):
+        self.current_color_index = (self.current_color_index + 1) % len(self.color_order)
+        self.reset_detection_data()
+
+    def handle_no_colour(self):
+        """Check if the current target color is missing too long, and skip it."""
+        timestep = self.robot.get_time_step() / 1000.0  # ms → s
+
+        if not self.color_object_angles:
+            self.search_timer += timestep
+            if self.search_timer > self.max_search_duration:
+                print(f"SKIPPING color: {self.color_order[self.current_color_index]} – not found")
+                self._next_color()
+                self.search_timer = 0
+        else:
+            self.search_timer = 0
 
     def _handle_approaching(self):
         self.left_velocity = 1.5
