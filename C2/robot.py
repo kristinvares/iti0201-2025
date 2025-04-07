@@ -243,12 +243,18 @@ class Robot:
         self.left_velocity = 1.5
         self.right_velocity = 1.5
 
-        if self.detected_objects:
-            for distance, angle in self.detected_objects:
-                if distance < 0.5:
-                    self.state = "finished"
-                    print("I, FINISHED")
-                    return
+        if not self.range_list or not isinstance(self.range_list, list):
+            return
+
+        center_index = len(self.range_list) // 4
+        angle_span = int((10 / 360) * len(self.range_list) / 2)
+
+        front_values = self.range_list[center_index - angle_span: center_index + angle_span + 1]
+        valid = [d for d in front_values if d is not None and d != float('inf')]
+
+        if valid and min(valid) < 0.5:
+            self.state = "finished"
+            print("I, FINISHED")
 
     def _handle_fixing_trajectory(self):
         print("I, FIX")
