@@ -213,7 +213,7 @@ class Robot:
         self.right_velocity = 2.0
         print("SEARCHING:", self.color_order[self.current_color_index])
         if self.color_object_angles:
-            if -0.05 < self.color_object_angles[0] < 0.05:
+            if -0.2 < self.color_object_angles[0] < 0.2:
                 self.left_velocity = 0.0
                 self.right_velocity = 0.0
                 self.state = "approaching"
@@ -242,15 +242,13 @@ class Robot:
     def _handle_approaching(self):
         self.left_velocity = 1.5
         self.right_velocity = 1.5
+
         if self.detected_objects:
-            if 4.65 > self.detected_objects[0][1] > 4.8:
-                self.state = "fixing_trajectory"
-        if self.detected_objects and self.detected_objects[0][0] < 0.5:
-            self.state = "finished"
-            print("I, FINISHED")
-        elif not self.detected_objects:
-            self.state = "search"
-            print("fked up situation")
+            for distance, angle in self.detected_objects:
+                if distance < 0.5:
+                    self.state = "finished"
+                    print("I, FINISHED")
+                    return
 
     def _handle_fixing_trajectory(self):
         print("I, FIX")
