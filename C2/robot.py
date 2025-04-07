@@ -26,7 +26,7 @@ class Robot:
 
         self.previous_time = 0.0
         self.search_timer = 0.0
-        self.max_search_duration = 5.0
+        self.max_search_duration = 10.0
 
 
     def sense(self) -> None:
