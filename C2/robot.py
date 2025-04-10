@@ -246,6 +246,7 @@ class Robot:
         if not self.range_list:
             return
 
+
         center_index = 480
         span = 9
         front_values = self.range_list[center_index - span: center_index + span + 1]
