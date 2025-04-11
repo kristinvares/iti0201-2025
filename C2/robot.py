@@ -6,7 +6,6 @@ import time
 
 class Robot:
     def __init__(self, robot: object) -> None:
-        """Initialize the Turtlebot logic controller."""
         self.current_color = None
         self.detected_objects = []
         self.robot = robot
@@ -103,6 +102,7 @@ class Robot:
         actions = {
             "search": self._handle_search,
             "approaching": self._handle_approaching,
+            "adjusting": self._handle_adjusting,
             "waiting": self._handle_waiting,
             "finished": self._handle_finished,
         }
@@ -144,33 +144,29 @@ class Robot:
         current_deg = math.degrees(self.orientation) % 360
         angle_diff = (self.best_target_angle - current_deg + 540) % 360 - 180
 
-        # Step 1: Coarse yaw alignment using IMU
-        if abs(angle_diff) > 3:
-            print(f"Rotating to target (IMU alignment). Δ{angle_diff:.2f}°")
+        if abs(angle_diff) > 5:
+            print(f"Rotating to target: Δ{angle_diff:.2f}°")
             self.left_velocity = -1.0 if angle_diff > 0 else 1.0
             self.right_velocity = 1.0 if angle_diff > 0 else -1.0
-            return
-
-        # Step 2: Fine-tune alignment using camera
-        if self.color_object_angles:
-            cam_angle = self.color_object_angles[0]
-            if abs(cam_angle) > 0.05:
-                print(f"Fine-tuning alignment via camera. Δ{cam_angle:.2f} rad")
-                self.left_velocity = -0.8 if cam_angle > 0 else 0.8
-                self.right_velocity = 0.8 if cam_angle > 0 else -0.8
-                return
-
-        # Step 3: Aligned – drive forward
-        self.left_velocity = 2.0
-        self.right_velocity = 2.0
-        distance = self._get_front_distance()
-        print(f"Driving to target. Distance: {distance:.2f}m")
-        if distance < 0.3:
-            print("Arrived at target. Holding position for 5 seconds...")
+        else:
+            print("Yaw alignment complete. Starting visual fine-tuning...")
             self.left_velocity = 0
             self.right_velocity = 0
-            self.arrival_time = self.robot.get_time()
-            self.state = "waiting"
+            self.state = "adjusting"
+
+    def _handle_adjusting(self):
+        if self.color_object_angles:
+            cam_angle = self.color_object_angles[0]
+            if abs(cam_angle) > 0.03:
+                print(f"Adjusting with camera. Δ{cam_angle:.2f} rad")
+                self.left_velocity = -0.6 if cam_angle > 0 else 0.6
+                self.right_velocity = 0.6 if cam_angle > 0 else -0.6
+            else:
+                print("Object centered in camera. Driving toward target.")
+                self.state = "drive"
+        else:
+            print("Object lost during adjustment. Switching to search.")
+            self.state = "search"
 
     def _handle_waiting(self):
         current_time = self.robot.get_time()
