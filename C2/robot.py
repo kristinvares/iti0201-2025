@@ -212,8 +212,8 @@ class Robot:
             state_actions[self.state]()
 
     def _handle_search(self):
-        self.left_velocity = -2.0
-        self.right_velocity = 2.0
+        self.left_velocity = -1.0
+        self.right_velocity = 1.0
 
         if self.scan_start_time == 0.0:
             self.scan_start_time = self.robot.get_time()
@@ -222,28 +222,25 @@ class Robot:
 
         if self.color_object_angles:
             for angle in self.color_object_angles:
-                lidar_index = int((angle + self.fov / 2) / self.fov * len(self.range_list))
-                if 0 <= lidar_index < len(self.range_list):
-                    distance = self.range_list[lidar_index]
-                    if distance and distance < float('inf'):
-                        self.possible_targets.append((distance, angle))
+                if -0.1 < angle < 0.1:  # ainult keskel olevad objektid
+                    lidar_index = int((angle + self.fov / 2) / self.fov * len(self.range_list))
+                    if 0 <= lidar_index < len(self.range_list):
+                        distance = self.range_list[lidar_index]
+                        if distance and distance != float('inf'):
+                            self.possible_targets.append((distance, angle))
 
         elapsed = self.robot.get_time() - self.scan_start_time
 
         if elapsed > self.scan_duration:
             if self.possible_targets:
-                self.possible_targets.sort()
-                _, best_angle = self.possible_targets[0]
-                if -0.1 < best_angle < 0.1:
-                    self.left_velocity = 0.0
-                    self.right_velocity = 0.0
-                    self.state = "approaching"
-                    print(f"FOUND: {self.color_order[self.current_color_index]}")
-                else:
-                    print("Turning to best angle")
-                    self.left_velocity = -0.5
-                    self.right_velocity = 0.5
-                    self.color_object_angles = [best_angle]
+                self.possible_targets.sort()  # järjestame kauguse järgi
+                best_distance, best_angle = self.possible_targets[0]
+
+                print(f"Best target at angle {best_angle:.2f}, distance {best_distance:.2f}")
+                self.left_velocity = 0.0
+                self.right_velocity = 0.0
+                self.color_object_angles = [best_angle]
+                self.state = "approaching"
             else:
                 print(f"No {self.color_order[self.current_color_index]} found")
                 self._next_color()
