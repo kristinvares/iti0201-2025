@@ -28,9 +28,6 @@ class Robot:
         self.search_timer = 0.0
         self.max_search_duration = 10.0
 
-        self.scan_start_time = 0.0
-        self.possible_targets = []
-        self.scan_duration = 9.0
 
     def sense(self) -> None:
         """Gather sensor data.
@@ -212,40 +209,15 @@ class Robot:
             state_actions[self.state]()
 
     def _handle_search(self):
-        self.left_velocity = -1.0
-        self.right_velocity = 1.0
-
-        if self.scan_start_time == 0.0:
-            self.scan_start_time = self.robot.get_time()
-            self.possible_targets = []
-            print(f"Starting scan for: {self.color_order[self.current_color_index]}")
-
+        self.left_velocity = -2.0
+        self.right_velocity = 2.0
+        print("SEARCHING:", self.color_order[self.current_color_index])
         if self.color_object_angles:
-            for angle in self.color_object_angles:
-                if -0.1 < angle < 0.1:  # ainult keskel olevad objektid
-                    lidar_index = int((angle + self.fov / 2) / self.fov * len(self.range_list))
-                    if 0 <= lidar_index < len(self.range_list):
-                        distance = self.range_list[lidar_index]
-                        if distance and distance != float('inf'):
-                            self.possible_targets.append((distance, angle))
-
-        elapsed = self.robot.get_time() - self.scan_start_time
-
-        if elapsed > self.scan_duration:
-            if self.possible_targets:
-                self.possible_targets.sort()  # järjestame kauguse järgi
-                best_distance, best_angle = self.possible_targets[0]
-
-                print(f"Best target at angle {best_angle:.2f}, distance {best_distance:.2f}")
+            if -0.1 < self.color_object_angles[0] < 0.1:
                 self.left_velocity = 0.0
                 self.right_velocity = 0.0
-                self.color_object_angles = [best_angle]
                 self.state = "approaching"
-            else:
-                print(f"No {self.color_order[self.current_color_index]} found")
-                self._next_color()
-                self.reset_detection_data()
-                self.scan_start_time = 0.0
+                print("FOUND:", self.color_order[self.current_color_index])
 
     def _next_color(self):
         self.current_color_index = (self.current_color_index + 1) % len(self.color_order)
@@ -305,12 +277,10 @@ class Robot:
         self.search_timer = 0.0
         self.previous_time = self.robot.get_time()
         self.state = "search"
-        self.scan_start_time = 0.0
 
     def reset_detection_data(self):
         self.detected_objects = []
         self.color_object_angles = []
-        self.possible_targets = []
 
     def act(self) -> None:
         """Execute planned actions. Perform the actions decided in the planning step, such as moving or interacting with the environment."""
