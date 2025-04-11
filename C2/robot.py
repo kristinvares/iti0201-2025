@@ -144,21 +144,30 @@ class Robot:
         current_deg = math.degrees(self.orientation) % 360
         angle_diff = (self.best_target_angle - current_deg + 540) % 360 - 180
 
-        if abs(angle_diff) > 5:
+        if abs(angle_diff) > 3:
             print(f"Rotating to target: Δ{angle_diff:.2f}°")
             self.left_velocity = -1.0 if angle_diff > 0 else 1.0
             self.right_velocity = 1.0 if angle_diff > 0 else -1.0
-        else:
-            self.left_velocity = 2.0
-            self.right_velocity = 2.0
-            distance = self._get_front_distance()
-            print(f"Driving to target. Distance: {distance:.2f}m")
-            if distance < 0.3:
-                print("Arrived at target. Holding position for 5 seconds... 🎯")
-                self.left_velocity = 0
-                self.right_velocity = 0
-                self.arrival_time = self.robot.get_time()
-                self.state = "waiting"
+            return
+
+        if self.color_object_angles:
+            angle = self.color_object_angles[0]
+            if abs(angle) > 0.05:
+                print(f"Fine-tuning alignment via camera. Δ{angle:.2f} rad")
+                self.left_velocity = -0.8 if angle > 0 else 0.8
+                self.right_velocity = 0.8 if angle > 0 else -0.8
+                return
+
+        self.left_velocity = 2.0
+        self.right_velocity = 2.0
+        distance = self._get_front_distance()
+        print(f"Driving to target. Distance: {distance:.2f}m")
+        if distance < 0.3:
+            print("Arrived at target. Holding position for 5 seconds... ")
+            self.left_velocity = 0
+            self.right_velocity = 0
+            self.arrival_time = self.robot.get_time()
+            self.state = "waiting"
 
     def _handle_waiting(self):
         current_time = self.robot.get_time()
