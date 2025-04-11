@@ -240,8 +240,8 @@ class Robot:
             self.search_timer = 0
 
     def _handle_approaching(self):
-        self.left_velocity = 2.5
-        self.right_velocity = 2.5
+        self.left_velocity = 4.5
+        self.right_velocity = 4.5
 
         if not self.range_list:
             return
