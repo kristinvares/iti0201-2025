@@ -157,6 +157,8 @@ class Robot:
             self.state = "adjusting"
 
     def _handle_adjusting(self):
+        min_dist = 100
+        cam_angle = None
         if self.color_object_angles:
             for angle in self.color_object_angles:
                 print("angle", angle)
@@ -165,13 +167,19 @@ class Robot:
                 mode = abs(angle) // ratio
                 print("mode", mode)
                 if angle > 0.0:
-                    dist = min(self.lidar[480+int(mode)-2:480+int(mode)+2])
+                    dist = min(self.lidar[480+int(mode)-4:480+int(mode)+4])
+                    if dist < min_dist:
+                        min_dist = dist
+                        cam_angle = angle
                     print(dist)
                 else:
                     print("else")
-                    dist = min(self.lidar[480 - int(mode) - 2:480 - int(mode) + 2])
+                    dist = min(self.lidar[480 - int(mode) - 4:480 - int(mode) + 4])
+                    if dist < min_dist:
+                        min_dist = dist
+                        cam_angle = angle
                     print(dist)
-            cam_angle = self.color_object_angles[0]
+            #cam_angle = self.color_object_angles[0]
 
 
             print(f"Adjusting with camera. Δ{cam_angle:.4f} rad")
