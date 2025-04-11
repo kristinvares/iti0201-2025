@@ -165,11 +165,11 @@ class Robot:
                 mode = abs(angle) // ratio
                 print("mode", mode)
                 if angle > 0.0:
-                    dist = min(self.lidar[480+mode-2:480+mode+2])
+                    dist = min(self.lidar[480+int(mode)-2:480+int(mode)+2])
                     print(dist)
                 else:
                     print("else")
-                    dist = min(self.lidar[480 - mode - 2:480 - mode + 2])
+                    dist = min(self.lidar[480 - int(mode) - 2:480 - int(mode) + 2])
                     print(dist)
             cam_angle = self.color_object_angles[0]
 
