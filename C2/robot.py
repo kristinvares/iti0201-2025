@@ -159,19 +159,17 @@ class Robot:
     def _handle_adjusting(self):
         if self.color_object_angles:
             cam_angle = self.color_object_angles[0]
-            print(f"Adjusting with camera. Δ{cam_angle:.2f} rad")
+            print(f"Adjusting with camera. Δ{cam_angle:.4f} rad")
 
-            if cam_angle > 0.05:
-                # Objekt on paremal pool — keera paremale
-                self.left_velocity = 0.3
-                self.right_velocity = -0.3
-            elif cam_angle < -0.05:
-                # Objekt on vasakul pool — keera vasakule
-                self.left_velocity = -0.3
-                self.right_velocity = 0.3
+            # Kitsam piir - täpsem keskele asetamine
+            if cam_angle > 0.02:
+                self.left_velocity = 0.2
+                self.right_velocity = -0.2
+            elif cam_angle < -0.02:
+                self.left_velocity = -0.2
+                self.right_velocity = 0.2
             else:
-                # Objekt on keskendatud
-                print("Object centered in camera. Driving toward target.")
+                print("Object centered precisely. Driving toward target.")
                 self.left_velocity = 2.5
                 self.right_velocity = 2.5
                 self.state = "driving"
