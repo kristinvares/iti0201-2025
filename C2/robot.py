@@ -1,4 +1,4 @@
-"""""C2: Robot logic for approaching nearest color-coded pole."""
+"""C2: Robot logic for approaching nearest color-coded pole."""
 from __future__ import annotations
 import math
 import numpy as np
@@ -19,11 +19,10 @@ class Robot:
         self.previous_time = 0.0
         self.search_timer = 0.0
         self.max_search_duration = 10.0
-        self.scanning_data = []  # Stores tuples of (angle, lidar_distance)
-        self.scan_start_angle = None
-        self.scan_complete = False
         self.best_target_angle = None
         self.best_target_distance = float('inf')
+        self.scan_start_angle = None
+        self.found_target = False
 
     def sense(self) -> None:
         self.time = self.robot.get_time()
@@ -31,20 +30,12 @@ class Robot:
         self.left_motor_ticks = self.robot.get_left_motor_encoder_ticks()
         self.right_motor_ticks = self.robot.get_right_motor_encoder_ticks()
         self.orientation = self.robot.get_orientation()
-        self.lidar_object_detection()
         if self.state == "search":
             self.image = self.robot.get_camera_rgb_image()
             self.fov = self.robot.get_camera_field_of_view()
             self.current_color = self.color_order[self.current_color_index]
             self.color_object_angles = self._get_color_object_angles(self.current_color)
             self.handle_no_colour()
-
-    def lidar_object_detection(self):
-        if self.lidar is None:
-            self.range_list = []
-            return
-        else:
-            self.range_list = self.lidar
 
     def _get_color_object_angles(self, color: str):
         if self.image is None or self.fov is None:
@@ -78,7 +69,6 @@ class Robot:
             y_min, x_min = pixels.min(axis=0)
             y_max, x_max = pixels.max(axis=0)
             x_center = (x_min + x_max) / 2
-
             angle = ((x_center - width / 2) / (width / 2)) * (self.fov / 2)
             angles.append(angle)
 
@@ -117,52 +107,51 @@ class Robot:
             actions[self.state]()
 
     def _handle_search(self):
-        if not self.scan_start_angle:
-            self.scan_start_angle = (math.degrees(self.orientation) + 360) % 360
-            self.scanning_data = []
-            print("Started scanning")
+        if self.scan_start_angle is None:
+            self.scan_start_angle = math.degrees(self.orientation) % 360
+            print("Started 360° scan")
 
         self.left_velocity = -1.5
         self.right_velocity = 1.5
-        current_angle = (math.degrees(self.orientation) + 360) % 360
+        current_angle = math.degrees(self.orientation) % 360
 
         if self.color_object_angles:
-            front_distance = self._get_front_distance()
-            if front_distance < self.best_target_distance:
-                self.best_target_angle = current_angle
-                self.best_target_distance = front_distance
-                print(f"New best target at angle {current_angle:.2f}°, distance {front_distance:.2f}m")
+            if -0.1 < self.color_object_angles[0] < 0.1:
+                front_distance = self._get_front_distance()
+                if front_distance < self.best_target_distance:
+                    self.best_target_angle = current_angle
+                    self.best_target_distance = front_distance
+                    print(f"New best target at angle {current_angle:.2f}°, distance {front_distance:.2f}m")
 
-        if abs(current_angle - self.scan_start_angle) < 5 and self.best_target_angle is not None:
-            print(f"Scan complete. Best target at {self.best_target_angle:.2f}°")
-            self.scan_complete = True
+        angle_diff = (current_angle - self.scan_start_angle + 360) % 360
+        if angle_diff > 350 and self.best_target_angle is not None:
+            print(f"Scan complete. Best target: {self.best_target_angle:.2f}° at {self.best_target_distance:.2f}m")
+            self.state = "approaching"
             self.left_velocity = 0
             self.right_velocity = 0
-
-            self.state = "approaching"
 
     def _get_front_distance(self):
         center_index = 480
         span = 9
-        front_values = self.range_list[center_index - span:center_index + span + 1]
+        front_values = self.lidar[center_index - span:center_index + span + 1]
         valid = [d for d in front_values if d is not None and d != float('inf')]
         return min(valid) if valid else float('inf')
 
     def _handle_approaching(self):
-        current_deg = (math.degrees(self.orientation) + 360) % 360
+        current_deg = math.degrees(self.orientation) % 360
         angle_diff = (self.best_target_angle - current_deg + 540) % 360 - 180
 
         if abs(angle_diff) > 5:
-            print(f"Rotating to align with target: {angle_diff:.2f}°")
+            print(f"Rotating to target: Δ{angle_diff:.2f}°")
             self.left_velocity = -1.0 if angle_diff > 0 else 1.0
             self.right_velocity = 1.0 if angle_diff > 0 else -1.0
         else:
             self.left_velocity = 2.0
             self.right_velocity = 2.0
-            front_distance = self._get_front_distance()
-            print(f"Approaching... Current front distance: {front_distance:.2f}m")
-            if front_distance < 0.4:
-                print("Arrived in front of object")
+            distance = self._get_front_distance()
+            print(f"Driving to target. Distance: {distance:.2f}m")
+            if distance < 0.4:
+                print("Arrived at target")
                 self.left_velocity = 0
                 self.right_velocity = 0
                 self.state = "finished"
@@ -179,8 +168,6 @@ class Robot:
         self.best_target_angle = None
         self.best_target_distance = float('inf')
         self.scan_start_angle = None
-        self.scan_complete = False
-        self.scanning_data = []
 
     def _next_color(self):
         self.current_color_index = (self.current_color_index + 1) % len(self.color_order)
