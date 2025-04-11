@@ -1,4 +1,4 @@
-"""C2: Robot logic for approaching nearest color-coded pole."""
+"""""C2: Robot logic for approaching nearest color-coded pole."""
 from __future__ import annotations
 import math
 import numpy as np
@@ -24,6 +24,7 @@ class Robot:
         self.scan_start_angle = None
         self.found_target = False
         self.arrival_time = None
+        self.state_start_time = None
 
     def sense(self) -> None:
         self.time = self.robot.get_time()
@@ -31,7 +32,7 @@ class Robot:
         self.left_motor_ticks = self.robot.get_left_motor_encoder_ticks()
         self.right_motor_ticks = self.robot.get_right_motor_encoder_ticks()
         self.orientation = self.robot.get_orientation()
-        if self.state == "search":
+        if self.state == "search" or self.state == "adjusting":
             self.image = self.robot.get_camera_rgb_image()
             self.fov = self.robot.get_camera_field_of_view()
             self.current_color = self.color_order[self.current_color_index]
@@ -103,6 +104,7 @@ class Robot:
             "search": self._handle_search,
             "approaching": self._handle_approaching,
             "adjusting": self._handle_adjusting,
+            "driving": self._handle_driving,
             "waiting": self._handle_waiting,
             "finished": self._handle_finished,
         }
@@ -163,14 +165,26 @@ class Robot:
                 self.right_velocity = 0.6 if cam_angle > 0 else -0.6
             else:
                 print("Object centered in camera. Driving toward target.")
-                self.state = "drive"
+                self.left_velocity = 2.5
+                self.right_velocity = 2.5
+                self.state = "driving"
         else:
             print("Object lost during adjustment. Switching to search.")
             self.state = "search"
 
+    def _handle_driving(self):
+        distance = self._get_front_distance()
+        print(f"Driving to target. Distance: {distance:.2f}m")
+        if distance < 0.3:
+            print("Arrived at target! Waiting before next target...")
+            self.left_velocity = 0
+            self.right_velocity = 0
+            self.arrival_time = self.robot.get_time()
+            self.state = "waiting"
+
     def _handle_waiting(self):
         current_time = self.robot.get_time()
-        if current_time - self.arrival_time >= 5.0:
+        if self.arrival_time is not None and current_time - self.arrival_time >= 5.0:
             self.state = "finished"
 
     def _handle_finished(self):
