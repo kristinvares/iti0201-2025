@@ -46,6 +46,7 @@ class Robot:
             self.current_color = self.color_order[self.current_color_index]
             self.color_object_angles = self._get_color_object_angles(self.current_color)
             self.handle_no_colour()
+            self.select_best_target()
 
     def lidar_object_detection(self):
         """Lidar detection."""
@@ -212,12 +213,12 @@ class Robot:
         self.left_velocity = -2.0
         self.right_velocity = 2.0
         print("SEARCHING:", self.color_order[self.current_color_index])
-        if self.color_object_angles:
-            if -0.1 < self.color_object_angles[0] < 0.1:
+        if self.best_target_angle is not None:
+            if -0.1 < self.best_target_angle < 0.1:
                 self.left_velocity = 0.0
                 self.right_velocity = 0.0
                 self.state = "approaching"
-                print("FOUND:", self.color_order[self.current_color_index])
+                print("FOUND:", self.current_color)
 
     def _next_color(self):
         self.current_color_index = (self.current_color_index + 1) % len(self.color_order)
@@ -239,6 +240,29 @@ class Robot:
         else:
             self.search_timer = 0
 
+    def select_best_target(self):
+        if not self.color_object_angles:
+            self.best_target_angle = None
+            self.best_target_distance = None
+            return
+
+        best_distance = float('inf')
+        best_angle = None
+
+        for angle in self.color_object_angles:
+            index = int((angle + self.fov / 2) / self.fov * len(self.range_list))
+            if 0 <= index < len(self.range_list):
+                distance = self.range_list[index]
+                if distance is not None and distance < best_distance:
+                    best_distance = distance
+                    best_angle = angle
+
+        if best_angle is not None:
+            self.best_target_angle = best_angle
+            self.best_target_distance = best_distance
+        else:
+            self.best_target_angle = None
+            self.best_target_distance = None
 
     def _handle_approaching(self):
         self.left_velocity = 2.5
@@ -252,7 +276,7 @@ class Robot:
         front_values = self.range_list[center_index - span: center_index + span + 1]
         valid = [d for d in front_values if d is not None and d != float('inf')]
 
-        if valid and min(valid) < 0.4:
+        if self.best_target_distance is not None and self.best_target_distance < 0.4:
             self.state = "finished"
             print("I, FINISHED")
 
