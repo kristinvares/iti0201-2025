@@ -239,6 +239,7 @@ class Robot:
         else:
             self.search_timer = 0
 
+
     def _handle_approaching(self):
         self.left_velocity = 2.5
         self.right_velocity = 2.5
