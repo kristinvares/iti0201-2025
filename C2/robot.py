@@ -2,6 +2,7 @@
 from __future__ import annotations
 import math
 import numpy as np
+import time
 
 class Robot:
     def __init__(self, robot: object) -> None:
@@ -23,6 +24,7 @@ class Robot:
         self.best_target_distance = float('inf')
         self.scan_start_angle = None
         self.found_target = False
+        self.arrival_time = None
 
     def sense(self) -> None:
         self.time = self.robot.get_time()
@@ -101,6 +103,7 @@ class Robot:
         actions = {
             "search": self._handle_search,
             "approaching": self._handle_approaching,
+            "waiting": self._handle_waiting,
             "finished": self._handle_finished,
         }
         if self.state in actions:
@@ -150,11 +153,17 @@ class Robot:
             self.right_velocity = 2.0
             distance = self._get_front_distance()
             print(f"Driving to target. Distance: {distance:.2f}m")
-            if distance < 0.4:
-                print("Arrived at target")
+            if distance < 0.3:
+                print("Arrived at target. Holding position for 5 seconds... 🎯")
                 self.left_velocity = 0
                 self.right_velocity = 0
-                self.state = "finished"
+                self.arrival_time = self.robot.get_time()
+                self.state = "waiting"
+
+    def _handle_waiting(self):
+        current_time = self.robot.get_time()
+        if current_time - self.arrival_time >= 5.0:
+            self.state = "finished"
 
     def _handle_finished(self):
         print(f"FINISHED: {self.color_order[self.current_color_index]}")
@@ -168,6 +177,7 @@ class Robot:
         self.best_target_angle = None
         self.best_target_distance = float('inf')
         self.scan_start_angle = None
+        self.arrival_time = None
 
     def _next_color(self):
         self.current_color_index = (self.current_color_index + 1) % len(self.color_order)
