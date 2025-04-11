@@ -1,11 +1,11 @@
-"""C2."""
+"""C2: Robot logic for approaching nearest color-coded pole."""
 from __future__ import annotations
 import math
 import numpy as np
 
-
 class Robot:
     def __init__(self, robot: object) -> None:
+        """Initialize the Turtlebot logic controller."""
         self.current_color = None
         self.detected_objects = []
         self.robot = robot
@@ -19,13 +19,14 @@ class Robot:
         self.previous_time = 0.0
         self.search_timer = 0.0
         self.max_search_duration = 10.0
-        self.scanning_data = []
+        self.scanning_data = []  # stores (orientation, distance) pairs
         self.scan_start_angle = None
         self.scan_complete = False
         self.best_target_angle = None
         self.best_target_distance = None
 
     def sense(self) -> None:
+        """Collect sensor data and process image/lidar data."""
         self.time = self.robot.get_time()
         self.lidar = self.robot.get_lidar_range_list()
         self.left_motor_ticks = self.robot.get_left_motor_encoder_ticks()
@@ -40,13 +41,16 @@ class Robot:
             self.handle_no_colour()
 
     def lidar_object_detection(self):
+        """Detect objects from lidar scan."""
         if self.lidar is None:
+            print("Lidar data is NULL!")
             self.range_list = []
             return
         else:
             self.range_list = self.lidar
 
         if not self.range_list or not isinstance(self.range_list, list):
+            print("Invalid or empty Lidar data, skipping sensing.")
             self.range_list = []
             return
 
@@ -78,6 +82,7 @@ class Robot:
         self.detected_objects = self._filter_objects(objects)
 
     def _get_color_object_angles(self, color: str):
+        """Return angles (in radians) where the current color object is seen in the camera."""
         if self.image is None or self.fov is None:
             return []
 
@@ -146,31 +151,24 @@ class Robot:
         return index * angle_per_step
 
     def _filter_objects(self, objects):
-        min_distance_threshold = 0.2
-        valid_objects = []
-
-        for obj in objects:
-            if obj[0] > min_distance_threshold:
-                valid_objects.append(obj)
-
-        return valid_objects
+        return [obj for obj in objects if obj[0] > 0.2]
 
     def plan(self) -> None:
-        state_actions = {
+        actions = {
             "search": self._handle_search,
             "approaching": self._handle_approaching,
             "fixing_trajectory": self._handle_fixing_trajectory,
             "finished": self._handle_finished,
         }
-
-        if self.state in state_actions:
-            state_actions[self.state]()
+        if self.state in actions:
+            actions[self.state]()
 
     def _handle_search(self):
         if not self.scan_start_angle:
             self.scan_start_angle = (math.degrees(self.orientation) + 360) % 360
             self.scanning_data = []
             self.scan_complete = False
+            print("Started scanning")
 
         self.left_velocity = -1.5
         self.right_velocity = 1.5
@@ -179,19 +177,24 @@ class Robot:
 
         if self.color_object_angles:
             distance = self._get_front_distance()
-            self.scanning_data.append((self.color_object_angles[0], distance))
+            self.scanning_data.append((current_angle, distance))
+            print(f"Object seen at angle {current_angle:.2f}°, distance {distance:.2f}m")
 
         if not self.scan_complete and abs(current_angle - self.scan_start_angle) < 5 and len(self.scanning_data) > 5:
             self.scan_complete = True
-            if self.scanning_data:
-                self.best_target_angle, self.best_target_distance = min(self.scanning_data, key=lambda x: x[1])
+            print("Scan complete. Finding closest target...")
+            self.best_target_angle, self.best_target_distance = min(self.scanning_data, key=lambda x: x[1])
 
         if self.scan_complete and self.best_target_angle is not None:
-            if -0.1 < self.best_target_angle < 0.1:
+            current_deg = (math.degrees(self.orientation) + 360) % 360
+            angle_diff = (self.best_target_angle - current_deg + 540) % 360 - 180
+            print(f"Turning toward {self.best_target_angle:.2f}° (diff: {angle_diff:.2f}°)")
+
+            if abs(angle_diff) < 5:
                 self.left_velocity = 0
                 self.right_velocity = 0
                 self.state = "approaching"
-                print("FOUND:", self.current_color)
+                print(f"Target aligned. Moving to target at {self.best_target_distance:.2f}m")
 
     def _get_front_distance(self):
         center_index = 480
@@ -210,7 +213,9 @@ class Robot:
 
         if not self.color_object_angles:
             self.search_timer += timestep
+            print(f"Looking for {self.current_color}... [{self.search_timer:.2f}s elapsed]")
             if self.search_timer > self.max_search_duration:
+                print(f"Skipping {self.current_color} – not found in time")
                 self._next_color()
                 self.reset_detection_data()
                 self.search_timer = 0
@@ -220,7 +225,6 @@ class Robot:
     def _handle_approaching(self):
         self.left_velocity = 2.5
         self.right_velocity = 2.5
-
         if self.best_target_distance is not None and self.best_target_distance < 0.4:
             self.state = "finished"
             print("I, FINISHED")
@@ -234,7 +238,7 @@ class Robot:
         self.right_velocity = 0
         print(f"FINISHED: {self.color_order[self.current_color_index]}")
         self.reset_detection_data()
-        self.current_color_index = (self.current_color_index + 1) % len(self.color_order)
+        self._next_color()
         self.search_timer = 0.0
         self.previous_time = self.robot.get_time()
         self.state = "search"
