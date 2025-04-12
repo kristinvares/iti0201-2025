@@ -133,8 +133,8 @@ class Robot:
         """Rotate robot to face the blue cube based on camera angle."""
         angle = self.get_cube_angle()
         if angle is None:
-            self.left_velocity = -0.5
-            self.right_velocity = 0.5
+            self.left_velocity = -2.5
+            self.right_velocity = 2.5
             return
 
         if abs(angle) < 0.1:
