@@ -21,6 +21,7 @@ class Robot:
         self.right_velocity = 0
         self.state = "approaching"
         self.avoid_timer = 0
+        self.avoid_cooldown = 0
 
     def find_blobs(self, mask):
         """Flood fill algorithm to find the blue object."""
@@ -181,9 +182,11 @@ class Robot:
         self.left_velocity = -2.0
         self.right_velocity = 2.0
         self.avoid_timer -= 1
+
         if self.avoid_timer <= 0:
             print("Avoid complete – returning to APPROACHING")
             self.state = "approaching"
+            self.avoid_cooldown = 40
 
     def sense(self) -> None:
         self.image = self.robot.get_camera_rgb_image()
@@ -197,8 +200,11 @@ class Robot:
         if not hasattr(self, "state"):
             self.state = "approaching"
 
+        if self.avoid_cooldown > 0:
+            self.avoid_cooldown -= 1
+
         if self.state == "approaching":
-            if self.non_blue_detected:
+            if self.non_blue_detected and self.avoid_cooldown == 0:
                 print("Non-blue object detected – switching to AVOIDING")
                 self.state = "avoiding"
                 self.avoid_timer = 20
