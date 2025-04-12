@@ -117,7 +117,7 @@ class Robot:
             self.right_velocity = 2.5
             return
 
-        if abs(angle) < 0.1:
+        if abs(angle) < 0.2:
             print("Cube is centered – switching to DRIVING state")
             self.left_velocity = 0
             self.right_velocity = 0
@@ -150,14 +150,14 @@ class Robot:
         x_min, x_max, y_min, y_max = cube_boxes[0]
         box_height = y_max - y_min
 
-        if box_height > 120:
+        if box_height > 100:
             print("Arrived at the cube!")
             self.left_velocity = 0
             self.right_velocity = 0
         else:
             print("Driving forward toward cube")
-            self.left_velocity = 2.5
-            self.right_velocity = 2.5
+            self.left_velocity = 3.0
+            self.right_velocity = 3.0
 
     def sense(self) -> None:
         self.image = self.robot.get_camera_rgb_image()
