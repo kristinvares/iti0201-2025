@@ -142,11 +142,11 @@ class Robot:
             self.right_velocity = 0
             self.state = "driving"
         elif angle > 0:
-            self.left_velocity = 0.5
-            self.right_velocity = -0.5
+            self.left_velocity = 1.5
+            self.right_velocity = -1.5
         else:
-            self.left_velocity = -0.5
-            self.right_velocity = 0.5
+            self.left_velocity = -1.5
+            self.right_velocity = 1.5
 
     def sense(self) -> None:
         self.image = self.robot.get_camera_rgb_image()
