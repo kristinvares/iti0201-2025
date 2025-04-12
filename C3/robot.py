@@ -178,9 +178,15 @@ class Robot:
         return np.any(red_object) or np.any(yellow_object)
 
     def _handle_avoiding(self):
-        print("Avoiding non-blue object – turning")
-        self.left_velocity = -2.0
-        self.right_velocity = 2.0
+        if self.avoid_timer > 10:
+            print("Avoiding non-blue object – turning")
+            self.left_velocity = -2.0
+            self.right_velocity = 2.0
+        else:
+            print("Moving forward after avoiding")
+            self.left_velocity = 2.0
+            self.right_velocity = 2.0
+
         self.avoid_timer -= 1
 
         if self.avoid_timer <= 0:
