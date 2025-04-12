@@ -20,15 +20,9 @@ class Robot:
         self.state = "approaching"
 
     def find_blobs(self, mask):
-        """
-        Flood fill algorithm to find the blue object.
-
-        :param mask:
-        :return:
-        """
+        """Flood fill algorithm to find the blue object."""
         height, width = mask.shape
         labled_mask = np.zeros_like(mask, dtype=np.uint32)
-
         lable_id = 1
         to_visit = []
         neighbours = ((-1, 0), (1, 0), (0, -1), (0, 1))
@@ -80,34 +74,22 @@ class Robot:
         boxes = self.get_object_bounding_box_list()
         if boxes is None:
             return None
-        something = []
+        cubes = []
         for box in boxes:
-            x_min = box[0]
-            x_max = box[1]
-            y_min = box[2]
-            y_max = box[3]
-
-
+            x_min, x_max = box[0], box[1]
+            y_min, y_max = box[2], box[3]
             x_side = x_max - x_min
             y_side = y_max - y_min
 
             threshold = 20
-            diffrence = 0
-            if x_side > y_side:
-                diffrence = x_side - y_side
-            elif y_side > x_side:
-                diffrence = y_side - x_side
-
-            if diffrence <= threshold:
-                something.append(box)
-        return something
+            difference = abs(x_side - y_side)
+            if difference <= threshold:
+                cubes.append(box)
+        return cubes
 
     def get_cube_objects(self) -> list | None:
         self.blue_cubes = self.update_cube_objects()
-        if self.blue_cubes:
-            return self.blue_cubes
-        else:
-            return None
+        return self.blue_cubes if self.blue_cubes else None
 
     def get_cube_angle(self):
         """Return the horizontal angle (in radians) to the detected blue cube center."""
@@ -119,74 +101,71 @@ class Robot:
             return None
 
         height, width = self.image.shape[:2]
-        angles = []
-
-        for box in cube_boxes:
-            x_min, x_max, _, _ = box
-            x_center = (x_min + x_max) / 2
-            angle = ((x_center - width / 2) / (width / 2)) * (self.fov / 2)
-            angles.append(angle)
-
-        return angles[0] if angles else None
+        x_min, x_max, _, _ = cube_boxes[0]
+        x_center = (x_min + x_max) / 2
+        angle = ((x_center - width / 2) / (width / 2)) * (self.fov / 2)
+        return angle
 
     def _handle_approaching(self):
         """Rotate robot to face the blue cube based on camera angle."""
+        print("APPROACHING: trying to face the cube")
         angle = self.get_cube_angle()
+
         if angle is None:
+            print("No cube detected – spinning left to search")
             self.left_velocity = -2.5
             self.right_velocity = 2.5
             return
 
         if abs(angle) < 0.1:
+            print("Cube is centered – switching to DRIVING state")
             self.left_velocity = 0
             self.right_velocity = 0
             self.state = "driving"
         elif angle > 0:
+            print("Cube is to the right – turning right")
             self.left_velocity = 1.5
             self.right_velocity = -1.5
         else:
+            print("Cube is to the left – turning left")
             self.left_velocity = -1.5
             self.right_velocity = 1.5
-
-    def sense(self) -> None:
-        self.image = self.robot.get_camera_rgb_image()
-        self.update_cube_objects()
-        self.fov = self.robot.get_camera_field_of_view()
-        self.lidar = self.robot.get_lidar_range_list()  # <- LIDAR andmed
 
     def _handle_driving(self):
         cube_boxes = self.get_cube_objects()
         if not cube_boxes:
+            print("Lost sight of cube – returning to APPROACHING state")
             self.state = "approaching"
             return
 
-        # LIDAR: takistuste vältimine
         if self.lidar:
             center_index = len(self.lidar) // 2
             front_distance = self.lidar[center_index]
             if front_distance is not None and front_distance < 0.4:
+                print("Obstacle ahead – stopping!")
                 self.left_velocity = 0
                 self.right_velocity = 0
-                print("Takistus ees, peatun!")
                 return
 
         x_min, x_max, y_min, y_max = cube_boxes[0]
         box_height = y_max - y_min
 
         if box_height > 120:
+            print("Arrived at the cube!")
             self.left_velocity = 0
             self.right_velocity = 0
-            print("Saabusin kuubi juurde!")
         else:
+            print("Driving forward toward cube")
             self.left_velocity = 2.5
             self.right_velocity = 2.5
 
-    def plan(self) -> None:
-        """Plan the robot's actions.
+    def sense(self) -> None:
+        self.image = self.robot.get_camera_rgb_image()
+        self.update_cube_objects()
+        self.fov = self.robot.get_camera_field_of_view()
+        self.lidar = self.robot.get_lidar_range_list()
 
-        Process the data collected during sensing and decide the next course
-        of action for the robot.
-        """
+    def plan(self) -> None:
         if not hasattr(self, "state"):
             self.state = "approaching"
 
@@ -196,19 +175,10 @@ class Robot:
             self._handle_driving()
 
     def act(self) -> None:
-        """Execute planned actions.
-
-        Perform the actions decided in the planning step, such as moving or
-        interacting with the environment.
-        """
         self.robot.set_left_motor_velocity(self.left_velocity)
         self.robot.set_right_motor_velocity(self.right_velocity)
 
     def spin(self) -> None:
-        """Spin the robot.
-
-        This is the main loop where the robot performs its sense-plan-act cycle.
-        """
         self.sense()
         self.plan()
         self.act()
