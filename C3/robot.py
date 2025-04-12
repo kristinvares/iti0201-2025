@@ -1,4 +1,6 @@
 """C3."""
+import numpy as np
+
 
 class Robot:
     """Turtlebot robot."""
@@ -13,6 +15,9 @@ class Robot:
         self.image = None
         self.fov = None
         self.blue_cubes = None
+        self.left_velocity = 0
+        self.right_velocity = 0
+        self.state = "approaching"
 
     def find_blobs(self, mask):
         """
@@ -104,15 +109,77 @@ class Robot:
         else:
             return None
 
-    def sense(self) -> None:
-        """Gather sensor data.
+    def get_cube_angle(self):
+        """Return the horizontal angle (in radians) to the detected blue cube center."""
+        if self.image is None or self.fov is None:
+            return None
 
-        Use the robot's sensors to collect data about its environment.
-        This method updates internal state variables based on sensor readings.
-        """
+        cube_boxes = self.get_cube_objects()
+        if not cube_boxes:
+            return None
+
+        height, width = self.image.shape[:2]
+        angles = []
+
+        for box in cube_boxes:
+            x_min, x_max, _, _ = box
+            x_center = (x_min + x_max) / 2
+            angle = ((x_center - width / 2) / (width / 2)) * (self.fov / 2)
+            angles.append(angle)
+
+        return angles[0] if angles else None
+
+    def _handle_approaching(self):
+        """Rotate robot to face the blue cube based on camera angle."""
+        angle = self.get_cube_angle()
+        if angle is None:
+            self.left_velocity = -0.5
+            self.right_velocity = 0.5
+            return
+
+        if abs(angle) < 0.1:
+            self.left_velocity = 0
+            self.right_velocity = 0
+            self.state = "driving"
+        elif angle > 0:
+            self.left_velocity = 0.5
+            self.right_velocity = -0.5
+        else:
+            self.left_velocity = -0.5
+            self.right_velocity = 0.5
+
+    def sense(self) -> None:
         self.image = self.robot.get_camera_rgb_image()
         self.update_cube_objects()
         self.fov = self.robot.get_camera_field_of_view()
+        self.lidar = self.robot.get_lidar_range_list()  # <- LIDAR andmed
+
+    def _handle_driving(self):
+        cube_boxes = self.get_cube_objects()
+        if not cube_boxes:
+            self.state = "approaching"
+            return
+
+        # LIDAR: takistuste vältimine
+        if self.lidar:
+            center_index = len(self.lidar) // 2
+            front_distance = self.lidar[center_index]
+            if front_distance is not None and front_distance < 0.4:
+                self.left_velocity = 0
+                self.right_velocity = 0
+                print("Takistus ees, peatun!")
+                return
+
+        x_min, x_max, y_min, y_max = cube_boxes[0]
+        box_height = y_max - y_min
+
+        if box_height > 120:
+            self.left_velocity = 0
+            self.right_velocity = 0
+            print("Saabusin kuubi juurde!")
+        else:
+            self.left_velocity = 1.5
+            self.right_velocity = 1.5
 
     def plan(self) -> None:
         """Plan the robot's actions.
@@ -120,6 +187,13 @@ class Robot:
         Process the data collected during sensing and decide the next course
         of action for the robot.
         """
+        if not hasattr(self, "state"):
+            self.state = "approaching"
+
+        if self.state == "approaching":
+            self._handle_approaching()
+        elif self.state == "driving":
+            self._handle_driving()
 
     def act(self) -> None:
         """Execute planned actions.
@@ -127,6 +201,8 @@ class Robot:
         Perform the actions decided in the planning step, such as moving or
         interacting with the environment.
         """
+        self.robot.set_left_motor_velocity(self.left_velocity)
+        self.robot.set_right_motor_velocity(self.right_velocity)
 
     def spin(self) -> None:
         """Spin the robot.
