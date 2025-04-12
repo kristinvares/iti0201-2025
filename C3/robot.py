@@ -178,8 +178,8 @@ class Robot:
             self.right_velocity = 0
             print("Saabusin kuubi juurde!")
         else:
-            self.left_velocity = 1.5
-            self.right_velocity = 1.5
+            self.left_velocity = 2.5
+            self.right_velocity = 2.5
 
     def plan(self) -> None:
         """Plan the robot's actions.
