@@ -12,12 +12,15 @@ class Robot:
             robot (object): An instance of a Turtlebot-like robot interface.
         """
         self.robot = robot
-        self.image = None
-        self.fov = None
+        self.image: np.ndarray | None = None
+        self.fov: float | None = None
+        self.lidar: list[float] = []
+        self.non_blue_detected: bool = False
         self.blue_cubes = None
         self.left_velocity = 0
         self.right_velocity = 0
         self.state = "approaching"
+        self.avoid_timer = 0
 
     def find_blobs(self, mask):
         """Flood fill algorithm to find the blue object."""
@@ -159,20 +162,54 @@ class Robot:
             self.left_velocity = 3.0
             self.right_velocity = 3.0
 
+    def _detect_non_blue_object(self):
+        if self.image is None:
+            return False
+
+        blue = self.image[:, :, 0]
+        green = self.image[:, :, 1]
+        red = self.image[:, :, 2]
+        threshold = 50
+
+        red_object = (red > blue + threshold) & (red > green + threshold)
+        yellow_object = (red > blue + threshold) & (green > blue + threshold)
+
+        return np.any(red_object) or np.any(yellow_object)
+
+    def _handle_avoiding(self):
+        print("Avoiding non-blue object – turning")
+        self.left_velocity = -2.0
+        self.right_velocity = 2.0
+        self.avoid_timer -= 1
+        if self.avoid_timer <= 0:
+            print("Avoid complete – returning to APPROACHING")
+            self.state = "approaching"
+
     def sense(self) -> None:
         self.image = self.robot.get_camera_rgb_image()
-        self.update_cube_objects()
         self.fov = self.robot.get_camera_field_of_view()
         self.lidar = self.robot.get_lidar_range_list()
+        self.update_cube_objects()
+
+        self.non_blue_detected = self._detect_non_blue_object()
 
     def plan(self) -> None:
         if not hasattr(self, "state"):
             self.state = "approaching"
 
         if self.state == "approaching":
-            self._handle_approaching()
+            if self.non_blue_detected:
+                print("Non-blue object detected – switching to AVOIDING")
+                self.state = "avoiding"
+                self.avoid_timer = 20
+            else:
+                self._handle_approaching()
+
         elif self.state == "driving":
             self._handle_driving()
+
+        elif self.state == "avoiding":
+            self._handle_avoiding()
 
     def act(self) -> None:
         self.robot.set_left_motor_velocity(self.left_velocity)
