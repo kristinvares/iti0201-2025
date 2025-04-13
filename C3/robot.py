@@ -186,6 +186,7 @@ class Robot:
 
         return labeled, label_id - 1
 
+
     def calculate_angle(self, box):
         x_min, x_max, _, _ = box
         width = self.image.shape[1]
