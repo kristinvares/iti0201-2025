@@ -11,6 +11,7 @@ class Robot:
     STATE_STOP = "ARRIVED"
 
     def __init__(self, robot_interface: object) -> None:
+        """Initialize robot logic."""
         self.robot = robot_interface
         self.image = None
         self.detected_target = None
@@ -24,17 +25,19 @@ class Robot:
         self.object_boxes = []
 
     def spin(self) -> None:
+        """Execute full sense-plan-act cycle."""
         self.sense()
         self.plan()
         self.act()
 
-
     def sense(self) -> None:
+        """Update image, cube detection and current time."""
         self.image = self.robot.get_camera_rgb_image()
         self.detected_target = self._get_cube_angle_and_size()
         self.current_time = self.robot.get_time()
 
     def plan(self):
+        """Decide next action based on current state."""
         match self.state:
             case self.STATE_START:
                 self.left_motor_speed = 1
@@ -67,10 +70,12 @@ class Robot:
                 print("Robot on peatunud.")
 
     def act(self) -> None:
+        """Send motor commands to the robot."""
         self.robot.set_left_motor_velocity(self.left_motor_speed)
         self.robot.set_right_motor_velocity(self.right_motor_speed)
 
     def _drive_to_target(self):
+        """Continue toward cube or stop if unseen for 3s."""
         if self.detected_target:
             self.left_motor_speed = 1
             self.right_motor_speed = 1
@@ -83,6 +88,7 @@ class Robot:
                 print("Robot lõpetas liikumise – kuupi ei leitud 3 sekundi jooksul.")
 
     def _get_cube_angle_and_size(self) -> list | None:
+        """Return angle and size of detected cube."""
         boxes = self._find_object_boxes()
         if boxes is None:
             return None
@@ -110,6 +116,7 @@ class Robot:
                 return angle, size
 
     def _find_object_boxes(self) -> list | None:
+        """Detect bounding boxes for blue objects."""
         if self.image is None:
             return None
 
@@ -131,6 +138,7 @@ class Robot:
         return boxes if boxes else None
 
     def _label_connected_regions(self, binary_mask):
+        """Label connected regions in binary mask."""
         height, width = binary_mask.shape
         labeled = np.zeros_like(binary_mask, dtype=np.uint32)
         label = 1
