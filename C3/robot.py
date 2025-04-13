@@ -36,7 +36,6 @@ def simplify_color_data_optimised(array, color):
         mask = (red > 110) & (green > 107) & (55 > blue)
         return mask.astype(int)
 
-
 def is_pixel_blue(bgr_tuple):
     """Return whether we are dealing with a blue pixel."""
     blue = float(bgr_tuple[0])
