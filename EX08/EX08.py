@@ -55,7 +55,7 @@ class Robot:
         return list(base_indices.values())[relative_idx]
 
     def _generate_visible_coordinates(self, x: int, y: int, visibility: dict) -> list:
-        """Returns list of visible grid cell coordinates from current location."""
+        """Return a list of visible grid cell coordinates from current location."""
         result = []
         for i in range(visibility["up"]):
             result.append((x, y + i + 1))
@@ -68,7 +68,7 @@ class Robot:
         return result
 
     def _add_to_graph(self, x: int, y: int, visibility: dict) -> None:
-        """Adds the current cell and its adjacent cells to the map graph."""
+        """Add the current cell and its adjacent cells to the map graph."""
         neighbors = []
         if visibility["up"]:
             neighbors.append((x, y + 1))
@@ -88,7 +88,7 @@ class Robot:
                 self.env_graph[neighbor].append((x, y))
 
     def _compute_cell_visibility(self) -> dict:
-        """Returns the number of visible cells in each direction based on LIDAR."""
+        """Return the number of visible cells in each direction based on LIDAR."""
         cardinal_directions = ["up", "left", "down", "right"]
         lidar_reference_indices = {"up": 480, "left": 320, "down": 160, "right": 639}
         current_facing = self._orientation_to_direction()
@@ -129,7 +129,7 @@ class Robot:
         pass
 
     def spin(self) -> None:
-        """Spin the robot."""
+        """Run one sense-plan-act cycle for the robot."""
         self.sense()
         self.plan()
         self.act()
