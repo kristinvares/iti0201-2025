@@ -18,7 +18,6 @@ class Robot:
         self.right_velocity = 0
         self.avoiding_obstacle = False
         self.avoid_start_time = 0.0
-        self.avoid_push_time = 1.5
         self.avoid_cooldown_time = 2.5
 
     def spin(self) -> None:
@@ -46,7 +45,6 @@ class Robot:
     def plan(self) -> None:
         current_time = self.robot.get_time()
 
-        # LIDAR scan
         front = self.lidar[470:490] if self.lidar else []
         left = self.lidar[400:470] if self.lidar else []
         right = self.lidar[490:560] if self.lidar else []
@@ -54,20 +52,29 @@ class Robot:
         min_front = min((d for d in front if d), default=1.0)
         min_left = min((d for d in left if d), default=1.0)
         min_right = min((d for d in right if d), default=1.0)
-        obstacle_close = min_front < 0.3 or min_left < 0.35 or min_right < 0.35
 
+        obstacle_close = self.is_obstacle_close(front, left, right)
+
+        # Välju vältimisest, kui takistus kaob
         if self.avoiding_obstacle and not obstacle_close:
             if current_time - self.avoid_start_time >= self.avoid_cooldown_time:
                 print("Obstacle cleared, resuming cube tracking")
                 self.avoiding_obstacle = False
 
-        # Enter avoidance
+        # Vältimise algus
         if obstacle_close and not self.avoiding_obstacle:
             print("Obstacle detected, entering avoidance mode")
             self.avoiding_obstacle = True
             self.avoid_start_time = current_time
             self.state = "avoiding"
 
+        # Lõputu vältimise katkestus (fallback)
+        if self.avoiding_obstacle and current_time - self.avoid_start_time > 5.0:
+            print("Avoiding timeout – resetting to search")
+            self.avoiding_obstacle = False
+            self.state = "search"
+
+        # Vältimise loogika
         if self.avoiding_obstacle:
             self.state = "avoiding"
 
@@ -90,13 +97,13 @@ class Robot:
                 print("Searching for cube")
             self.state = "search"
 
-        # Kui takistus on möödas, aga kuupi ei näe, hakka uuesti otsima
+        # Kui kuupi ei näe, otsi uuesti
         if not self.target_box and not self.avoiding_obstacle:
             if self.state != "search":
                 print("Resuming search after obstacle")
             self.state = "search"
 
-        # --- Movement Control ---
+        # --- Liikumine ---
         if self.state == "adjusting":
             self.left_velocity = 0.3 if self.target_angle > 0 else -0.3
             self.right_velocity = -self.left_velocity
@@ -116,10 +123,14 @@ class Robot:
                     print("Avoiding: turning left")
                     self.left_velocity = 0.4
                     self.right_velocity = 1.2
-            else:
+            elif elapsed < 1.8:
                 print("Avoiding: moving forward")
                 self.left_velocity = 1.2
                 self.right_velocity = 1.2
+            else:
+                print("Avoiding done – resetting")
+                self.avoiding_obstacle = False
+                self.state = "search"
 
         elif self.state == "search":
             self.left_velocity = -0.5
@@ -132,6 +143,11 @@ class Robot:
     def act(self) -> None:
         self.robot.set_left_motor_velocity(self.left_velocity)
         self.robot.set_right_motor_velocity(self.right_velocity)
+
+    def is_obstacle_close(self, front, left, right) -> bool:
+        threshold = 0.35
+        safe = lambda data: [d for d in data if d < threshold]
+        return len(safe(front)) > 5 or len(safe(left)) > 5 or len(safe(right)) > 5
 
     # --- Image processing methods ---
 
