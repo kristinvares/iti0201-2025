@@ -41,7 +41,7 @@ class Robot:
         return "unknown"
 
     def get_traversable_cells(self) -> list:
-        """Get a list of all known traversable cells in the map."""
+        """Return a list of all known traversable cells in the map."""
         return list(set(self.known_cells))
 
     def get_map(self) -> dict:
@@ -103,7 +103,7 @@ class Robot:
         return visibility
 
     def sense(self) -> None:
-        """Gather sensor data."""
+        """Run one sense-plan-act cycle for the robot."""
         self.lidar_snapshot = self.robot.get_lidar_range_list()
         if not self.lidar_snapshot:
             return
