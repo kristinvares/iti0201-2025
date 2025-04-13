@@ -22,48 +22,31 @@ class Robot:
         self.env_graph = {}
         self.mapped_cells = {}
 
-    def get_traversable_cells(self) -> list:
-        """Get a list of all known traversable cells in the map."""
-        return list(set(self.known_cells))
-
     def get_unmapped_cells(self) -> list:
         """Get a list of all unmapped cells that the robot has discovered so far."""
         return [cell for cell in self.known_cells if cell not in self.mapped_cells]
 
+    def _orientation_to_direction(self) -> str:
+        """Converts the robot's current orientation angle to a cardinal direction."""
+        angle = self.facing_angle
+        margin = 0.05
+        if abs(angle) < margin:
+            return "up"
+        elif abs(angle - math.pi / 2) < margin:
+            return "left"
+        elif abs(angle - math.pi) < margin or abs(angle + math.pi) < margin:
+            return "down"
+        elif abs(angle + math.pi / 2) < margin:
+            return "right"
+        return "unknown"
+
+    def get_traversable_cells(self) -> list:
+        """Get a list of all known traversable cells in the map."""
+        return list(set(self.known_cells))
+
     def get_map(self) -> dict:
         """Get the map representation as a dictionary of adjacency."""
         return self.env_graph
-
-    def sense(self) -> None:
-        """Gather sensor data."""
-        self.lidar_snapshot = self.robot.get_lidar_range_list()
-        if not self.lidar_snapshot:
-            return
-
-        x, y = self.robot.get_current_position()
-        self.facing_angle = self.robot.get_orientation()
-
-        directions = self._compute_cell_visibility()
-        visible_cells = self._generate_visible_coordinates(x, y, directions)
-
-        self.known_cells.extend(visible_cells)
-        self.known_cells.append((x, y))
-
-        self._add_to_graph(x, y, directions)
-
-    def plan(self) -> None:
-        """Plan the robot's actions."""
-        pass
-
-    def act(self) -> None:
-        """Execute planned actions."""
-        pass
-
-    def spin(self) -> None:
-        """Spin the robot."""
-        self.sense()
-        self.plan()
-        self.act()
 
     def _resolve_lidar_index(self, current: str, target: str, base_indices: dict, dir_labels: list) -> int:
         """Computes correct LIDAR index for a given relative direction."""
@@ -104,20 +87,6 @@ class Robot:
             if (x, y) not in self.env_graph[neighbor]:
                 self.env_graph[neighbor].append((x, y))
 
-    def _orientation_to_direction(self) -> str:
-        """Converts the robot's current orientation angle to a cardinal direction."""
-        angle = self.facing_angle
-        margin = 0.05
-        if abs(angle) < margin:
-            return "up"
-        elif abs(angle - math.pi / 2) < margin:
-            return "left"
-        elif abs(angle - math.pi) < margin or abs(angle + math.pi) < margin:
-            return "down"
-        elif abs(angle + math.pi / 2) < margin:
-            return "right"
-        return "unknown"
-
     def _compute_cell_visibility(self) -> dict:
         """Returns the number of visible cells in each direction based on LIDAR."""
         cardinal_directions = ["up", "left", "down", "right"]
@@ -131,5 +100,36 @@ class Robot:
             valid_readings = [d for d in segment if not math.isinf(d)]
             max_distance = max(valid_readings, default=0.0)
             visibility[direction] = int(max_distance / self.CELL_SIZE)
-
         return visibility
+
+    def sense(self) -> None:
+        """Gather sensor data."""
+        self.lidar_snapshot = self.robot.get_lidar_range_list()
+        if not self.lidar_snapshot:
+            return
+
+        x, y = self.robot.get_current_position()
+        self.facing_angle = self.robot.get_orientation()
+
+        directions = self._compute_cell_visibility()
+        visible_cells = self._generate_visible_coordinates(x, y, directions)
+
+        self.known_cells.extend(visible_cells)
+        self.known_cells.append((x, y))
+
+        self._add_to_graph(x, y, directions)
+
+
+    def plan(self) -> None:
+        """Plan the robot's actions."""
+        pass
+
+    def act(self) -> None:
+        """Execute planned actions."""
+        pass
+
+    def spin(self) -> None:
+        """Spin the robot."""
+        self.sense()
+        self.plan()
+        self.act()
