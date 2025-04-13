@@ -119,7 +119,6 @@ class Robot:
 
         self._add_to_graph(x, y, directions)
 
-
     def plan(self) -> None:
         """Plan the robot's actions."""
         pass
