@@ -18,8 +18,8 @@ class Robot:
         self.right_velocity = 0
         self.avoiding_obstacle = False
         self.avoid_start_time = 0.0
-        self.avoid_push_time = 1.5          # aeg, mil pöörame + hakkame otse sõitma
-        self.avoid_cooldown_time = 2.5      # kokku aeg, enne kui võib jälle cube'ile reageerida
+        self.avoid_push_time = 1.5
+        self.avoid_cooldown_time = 2.5
 
     def spin(self) -> None:
         self.sense()
@@ -56,13 +56,12 @@ class Robot:
         min_right = min((d for d in right if d), default=1.0)
         obstacle_close = min_front < 0.3 or min_left < 0.35 or min_right < 0.35
 
-        # Exit avoidance after cooldown
         if self.avoiding_obstacle and not obstacle_close:
             if current_time - self.avoid_start_time >= self.avoid_cooldown_time:
                 print("Obstacle cleared, resuming cube tracking")
                 self.avoiding_obstacle = False
 
-        # Enter avoidance if needed
+        # Enter avoidance
         if obstacle_close and not self.avoiding_obstacle:
             print("Obstacle detected, entering avoidance mode")
             self.avoiding_obstacle = True
@@ -77,7 +76,7 @@ class Robot:
                 if self.state != "adjusting":
                     print("Adjusting to face cube")
                 self.state = "adjusting"
-            elif self.target_distance > 0.25:
+            elif self.target_distance > 0.05:
                 if self.state != "driving":
                     print("Driving toward cube")
                 self.state = "driving"
@@ -91,7 +90,13 @@ class Robot:
                 print("Searching for cube")
             self.state = "search"
 
-        # Movement control
+        # Kui takistus on möödas, aga kuupi ei näe, hakka uuesti otsima
+        if not self.target_box and not self.avoiding_obstacle:
+            if self.state != "search":
+                print("Resuming search after obstacle")
+            self.state = "search"
+
+        # --- Movement Control ---
         if self.state == "adjusting":
             self.left_velocity = 0.3 if self.target_angle > 0 else -0.3
             self.right_velocity = -self.left_velocity
@@ -185,7 +190,6 @@ class Robot:
                 label_id += 1
 
         return labeled, label_id - 1
-
 
     def calculate_angle(self, box):
         x_min, x_max, _, _ = box
