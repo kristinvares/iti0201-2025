@@ -28,6 +28,7 @@ class Robot:
         self.plan()
         self.act()
 
+
     def sense(self) -> None:
         self.image = self.robot.get_camera_rgb_image()
         self.detected_target = self._get_cube_angle_and_size()
