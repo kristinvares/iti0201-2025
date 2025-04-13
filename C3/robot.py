@@ -1,109 +1,162 @@
-from __future__ import annotations
 import numpy as np
 
 
 class Robot:
-    def __init__(self, robot: object) -> None:
-        self.robot = robot
-        self.camera_image = None
-        self.fov = None
-        self.angle = None
-        self.distance = None
-        self.left_velocity = 0.0
-        self.right_velocity = 0.0
+    """Turtlebot robot."""
+
+    STATE_START = "START"
+    STATE_SEARCH = "FIND"
+    STATE_ALIGN = "ALIGN_TO_OBJ"
+    STATE_DRIVE = "APPROACH"
+    STATE_STOP = "ARRIVED"
+
+    def __init__(self, robot_interface: object) -> None:
+        """Initialize robot logic."""
+        self.robot = robot_interface
+        self.image = None
+        self.detected_target = None
+        self.current_time = 0
+        self.previous_time = 0
+
+        self.left_motor_speed = -1
+        self.right_motor_speed = 1
+
+        self.state = self.STATE_START
+        self.object_boxes = []
 
     def spin(self) -> None:
+        """Main loop."""
         self.sense()
         self.plan()
         self.act()
 
     def sense(self) -> None:
-        self.camera_image = self.robot.get_camera_rgb_image()
-        self.fov = self.robot.get_camera_field_of_view()
-        if self.camera_image is not None:
-            cube = self.detect_blue_cube()
-            if cube:
-                self.angle, self.distance = cube
-            else:
-                self.angle = None
-                self.distance = None
+        """Collect sensor data from camera and robot clock."""
+        self.image = self.robot.get_camera_rgb_image()
+        self.detected_target = self._get_cube_angle_and_size()
+        self.current_time = self.robot.get_time()
 
-    def plan(self) -> None:
-        if self.angle is None or self.distance is None:
-            self.left_velocity = -0.5
-            self.right_velocity = 0.5
-            return
-        if abs(self.angle) > 0.1:
-            self.left_velocity = 0.3 if self.angle > 0 else -0.3
-            self.right_velocity = -self.left_velocity
-        elif self.distance > 0.2:
-            self.left_velocity = 1.0
-            self.right_velocity = 1.0
-        else:
-            self.left_velocity = 0.0
-            self.right_velocity = 0.0
+    def plan(self):
+        """Decide robot behavior based on current state and observations."""
+        match self.state:
+            case self.STATE_START:
+                self.left_motor_speed = 1
+                self.right_motor_speed = 1
+                if self.current_time > 2.5:
+                    self.state = self.STATE_SEARCH
+
+            case self.STATE_SEARCH:
+                self.left_motor_speed = -1
+                self.right_motor_speed = 1
+                if self.detected_target:
+                    angle, _ = self.detected_target
+                    if angle is not None:
+                        self.state = self.STATE_ALIGN if abs(angle) > 0.1 else self.STATE_DRIVE
+
+            case self.STATE_ALIGN:
+                self.left_motor_speed = -1
+                self.right_motor_speed = 1
+                if self.detected_target:
+                    angle, _ = self.detected_target
+                    if abs(angle) < 0.1:
+                        self.state = self.STATE_DRIVE
+
+            case self.STATE_DRIVE:
+                self._drive_to_target()
+
+            case self.STATE_STOP:
+                self.left_motor_speed = 0
+                self.right_motor_speed = 0
 
     def act(self) -> None:
-        self.robot.set_left_motor_velocity(self.left_velocity)
-        self.robot.set_right_motor_velocity(self.right_velocity)
+        """Control robot motors."""
+        self.robot.set_left_motor_velocity(self.left_motor_speed)
+        self.robot.set_right_motor_velocity(self.right_motor_speed)
 
-    def detect_blue_cube(self) -> tuple | None:
-        image = self.camera_image
-        if image is None:
+    def _drive_to_target(self):
+        """Move forward if cube is visible or stop after timeout."""
+        if self.detected_target:
+            self.left_motor_speed = 1
+            self.right_motor_speed = 1
+            self.previous_time = self.current_time
+        else:
+            self.left_motor_speed = 1
+            self.right_motor_speed = 1
+            if self.current_time - self.previous_time > 3.0:
+                self.state = self.STATE_STOP
+
+    def _get_cube_angle_and_size(self) -> list | None:
+        """Detect blue cube and return angle and size."""
+        boxes = self._find_object_boxes()
+        if boxes is None:
             return None
-        blue = image[:, :, 0].astype(float)
-        green = image[:, :, 1].astype(float)
-        red = image[:, :, 2].astype(float)
-        mask = (blue > 100) & ((green + red) < 150)
-        if not np.any(mask):
+
+        try:
+            fov = self.robot.get_camera_field_of_view()
+        except AttributeError:
+            fov = 0.784
+
+        for x_min, x_max, y_min, y_max in boxes:
+            width = x_max - x_min + 1
+            height = y_max - y_min + 1
+            aspect_ratio = width / height
+
+            blue = self.image[y_min:y_max + 1, x_min:x_max + 1, 0]
+            green = self.image[y_min:y_max + 1, x_min:x_max + 1, 1]
+            red = self.image[y_min:y_max + 1, x_min:x_max + 1, 2]
+
+            mask = (blue > green + 15) & (blue > red + 15)
+            if np.sum(mask) / (width * height) > 0.4 and 0.8 <= aspect_ratio <= 1.4:
+                center_x = (x_min + x_max) / 2
+                _, frame_width, _ = self.image.shape
+                size = (x_max - x_min) ** 2
+                angle = (center_x - frame_width / 2) * (fov / frame_width)
+                return angle, size
+
+    def _find_object_boxes(self) -> list | None:
+        """Extract bounding boxes around blue blobs."""
+        if self.image is None:
             return None
-        labeled, count = self.find_blobs(mask)
+
+        blue = self.image[:, :, 0]
+        green = self.image[:, :, 1]
+        red = self.image[:, :, 2]
+
+        mask = (blue > green + 10) & (blue > red + 10)
+        labeled, count = self._label_connected_regions(mask)
+
         if count == 0:
             return None
-        best_box = None
-        best_y_center = 0
-        for i in range(1, count + 1):
-            pixels = np.column_stack(np.where(labeled == i))
-            if pixels.size == 0:
-                continue
-            y_min, x_min = pixels.min(axis=0)
-            y_max, x_max = pixels.max(axis=0)
-            width = x_max - x_min
-            height = y_max - y_min
-            aspect_ratio = width / height if height != 0 else 0
-            if 0.6 < aspect_ratio < 1.5:
-                y_center = (y_min + y_max) / 2
-                if y_center > best_y_center:
-                    best_y_center = y_center
-                    best_box = (x_min, x_max, y_min, y_max)
-        if best_box is None:
-            return None
-        x_min, x_max, y_min, y_max = best_box
-        x_center = (x_min + x_max) / 2
-        width = image.shape[1]
-        angle = ((x_center - width / 2) / (width / 2)) * (self.fov / 2)
-        height = image.shape[0]
-        y_from_bottom = height - ((y_min + y_max) / 2)
-        estimated_distance = y_from_bottom * 0.006
-        return angle, estimated_distance
 
-    def find_blobs(self, mask):
-        height, width = mask.shape
-        labeled = np.zeros_like(mask, dtype=np.uint32)
-        label_id = 1
-        to_visit = []
-        neighbors = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        for y, x in np.argwhere(mask):
+        boxes = []
+        for i in range(1, count + 1):
+            ys, xs = np.where(labeled == i)
+            boxes.append((xs.min(), xs.max(), ys.min(), ys.max()))
+
+        return boxes if boxes else None
+
+    def _label_connected_regions(self, binary_mask):
+        """Label connected pixel regions in binary mask."""
+        height, width = binary_mask.shape
+        labeled = np.zeros_like(binary_mask, dtype=np.uint32)
+        label = 1
+        to_process = []
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+        for y, x in np.argwhere(binary_mask):
             if labeled[y, x] == 0:
-                labeled[y, x] = label_id
-                to_visit.append((y, x))
-                while to_visit:
-                    cy, cx = to_visit.pop()
-                    for dy, dx in neighbors:
+                labeled[y, x] = label
+                to_process.append((y, x))
+
+                while to_process:
+                    cy, cx = to_process.pop()
+                    for dy, dx in directions:
                         ny, nx = cy + dy, cx + dx
                         if 0 <= ny < height and 0 <= nx < width:
-                            if mask[ny, nx] and labeled[ny, nx] == 0:
-                                labeled[ny, nx] = label_id
-                                to_visit.append((ny, nx))
-                label_id += 1
-        return labeled, label_id - 1
+                            if binary_mask[ny, nx] and labeled[ny, nx] == 0:
+                                labeled[ny, nx] = label
+                                to_process.append((ny, nx))
+
+                label += 1
+
+        return labeled, label - 1
