@@ -23,11 +23,11 @@ class Robot:
         self.mapped_cells = {}
 
     def get_unmapped_cells(self) -> list:
-        """Get a list of all unmapped cells that the robot has discovered so far."""
+        """Return a list of all unmapped cells discovered so far."""
         return [cell for cell in self.known_cells if cell not in self.mapped_cells]
 
     def _orientation_to_direction(self) -> str:
-        """Converts the robot's current orientation angle to a cardinal direction."""
+        """Convert the robot's current orientation angle to a cardinal direction."""
         angle = self.facing_angle
         margin = 0.05
         if abs(angle) < margin:
@@ -49,7 +49,7 @@ class Robot:
         return self.env_graph
 
     def _resolve_lidar_index(self, current: str, target: str, base_indices: dict, dir_labels: list) -> int:
-        """Computes correct LIDAR index for a given relative direction."""
+        """Compute correct LIDAR index for a given relative direction."""
         current_idx = dir_labels.index(current)
         relative_idx = (dir_labels.index(target) - current_idx) % 4
         return list(base_indices.values())[relative_idx]
