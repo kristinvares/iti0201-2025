@@ -136,6 +136,10 @@ class Robot:
 
         self.facing_angle = self.robot.get_orientation()
 
+        x, y = self.robot.get_current_position()
+        self.x = int(round(x / self.CELL_SIZE))
+        self.y = int(round(y / self.CELL_SIZE))
+
         directions = self._compute_cell_visibility()
         visible_cells = self._generate_visible_coordinates(self.x, self.y, directions)
 
@@ -144,7 +148,9 @@ class Robot:
 
         self._add_to_graph(self.x, self.y, directions)
 
-        frontiers = [cell for cell in self.known_cells if self._is_frontier_cell(cell)]
+        robot_pos = (self.x, self.y)
+        frontiers = [cell for cell in self.known_cells
+                     if self._is_frontier_cell(cell) and cell != robot_pos]
         return frontiers
 
     def _manhattan_distance(self, start, end):
@@ -246,6 +252,10 @@ class Robot:
         """
         self.time = self.robot.get_time()
         self.orientation = self.robot.get_orientation()
+        x, y = self.robot.get_current_position()
+        self.x = int(round(x / self.CELL_SIZE))
+        self.y = int(round(y / self.CELL_SIZE))
+
         self.find_frontier_and_path()
 
 
