@@ -169,22 +169,13 @@ class Robot:
         f_score = {start: self._manhattan_distance(start, end)}
 
         while open_set:
-            if self.i == 20:  # testing
-                return
             current = min(open_set, key=lambda node: f_score.get(node, float('inf')))
-            print(f"Finding path from {current} to {end}")
-            print(f"Open set: {open_set}")
-            print(f"Closed set: {closed_set}")
-            print(f"Came from: {came_from}")
-            print(current, end)
+
             if current == end:
-                print("Finished with finding path")
-                print("")
                 return self._reconstruct_path(came_from, current)
 
             open_set.remove(current)
             closed_set.add(current)
-            self.i += 1  # testing
 
             for neighbor in self.env_graph.get(current, []):
                 if neighbor in closed_set:
@@ -209,30 +200,14 @@ class Robot:
         return path[::-1]
 
     def find_frontier_and_path(self) -> None:
+        """Find the nearest frontier (by Manhattan distance) and compute path to it."""
         frontiers = self.get_unmapped_cells()
-        current_grid_x = int(round(self.x / self.CELL_SIZE))
-        current_grid_y = int(round(self.y / self.CELL_SIZE))
-        current_position = (current_grid_x, current_grid_y)
-
         if not frontiers:
             self.current_frontier_and_path = [None, None]
             return
-
-        best_frontier = None
-        shortest_path = None
-        min_distance = float('inf')
-        for frontier in frontiers:
-            path = self.find_path(current_position, frontier)
-            if path:
-                distance = len(path) - 1
-                if distance < min_distance:
-                    min_distance = distance
-                    best_frontier = frontier
-                    shortest_path = path
-            elif best_frontier is None:
-                best_frontier = frontier
-                shortest_path = []
-
+        current_position = (self.x, self.y)
+        best_frontier = min(frontiers, key=lambda f: self._manhattan_distance(current_position, f))
+        shortest_path = self.find_path(current_position, best_frontier)
         self.current_frontier_and_path = [best_frontier, shortest_path]
 
     def _is_frontier_cell(self, cell):
