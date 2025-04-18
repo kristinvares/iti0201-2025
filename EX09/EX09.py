@@ -1,5 +1,3 @@
-"""EX09."""
-
 import math
 
 class Robot:
@@ -8,52 +6,25 @@ class Robot:
     CELL_SIZE = 0.615
 
     def __init__(self, robot: object) -> None:
-        """Class initializer.
-
-        Args:
-            robot (object): An instance of a Turtlebot-like robot interface.
-        """
+        """Class initializer."""
         self.robot = robot
         self.time = 0.0
         self.orientation = 0.0
         self.current_frontier_and_path = None
         self.lidar = None
 
-        self.known_cells = []
+        self.known_cells = set()
         self.env_graph = {}
         self.mapped_cells = {}
         self.x = 0
         self.y = 0
-        self.i = 0
-
 
     def get_frontier_and_path(self) -> list:
-        """Identify next frontier for exploration and calculate the path to reach it.
-
-        The frontier is the boundary between the known (mapped) and unknown (unmapped)
-        regions of the map. This method determines the most suitable frontier to
-        explore next and computes the path from the robot's current position to that
-        frontier. Formula for choosing the next frontier to explore: Manhattan distance
-
-        Returns:
-            [(int, int), [(int, int), ...]]:
-            - The first element is a tuple (x, y) representing the coordinates of the
-              selected frontier.
-            - The second element is a list of tuples [(x1, y1), (x2, y2), ...]
-              representing the sequence of grid cells (coordinates) the robot should
-              traverse in order to reach the frontier.
-
-        Example:
-            Suppose the robot's current position is (0, 0), and it detects a frontier
-            at (3, 0). The function might return:
-                [(3, 0), [(0, 0), (1, 0), (2, 0), (3, 0)]]
-            This means the robot should travel through the listed cells to reach the
-            frontier at (3, 0).
-        """
+        """Return precomputed frontier and path."""
         return self.current_frontier_and_path
 
     def _orientation_to_direction(self) -> str:
-        """Convert the robot's current orientation angle to a cardinal direction."""
+        """Convert orientation angle to cardinal direction."""
         angle = self.facing_angle
         margin = 0.05
         if abs(angle) < margin:
@@ -67,21 +38,21 @@ class Robot:
         return "unknown"
 
     def get_traversable_cells(self) -> list:
-        """Return a list of all known traversable cells in the map."""
-        return list(set(self.known_cells))
+        """Return known traversable cells."""
+        return list(self.known_cells)
 
     def get_map(self) -> dict:
-        """Get the map representation as a dictionary of adjacency."""
+        """Return environment graph."""
         return self.env_graph
 
     def _resolve_lidar_index(self, current: str, target: str, base_indices: dict, dir_labels: list) -> int:
-        """Compute correct LIDAR index for a given relative direction."""
+        """Get correct LIDAR index for relative direction."""
         current_idx = dir_labels.index(current)
         relative_idx = (dir_labels.index(target) - current_idx) % 4
         return list(base_indices.values())[relative_idx]
 
     def _generate_visible_coordinates(self, x: int, y: int, visibility: dict) -> list:
-        """Return a list of visible grid cell coordinates from current location."""
+        """Generate coordinates for visible grid cells."""
         result = []
         for i in range(visibility["up"]):
             result.append((x, y + i + 1))
@@ -94,7 +65,7 @@ class Robot:
         return result
 
     def _add_to_graph(self, x: int, y: int, visibility: dict) -> None:
-        """Add the current cell and its adjacent cells to the map graph."""
+        """Update graph with visible neighbors."""
         neighbors = []
         if visibility["up"]:
             neighbors.append((x, y + 1))
@@ -114,7 +85,7 @@ class Robot:
                 self.env_graph[neighbor].append((x, y))
 
     def _compute_cell_visibility(self) -> dict:
-        """Return the number of visible cells in each direction based on LIDAR."""
+        """Get number of visible cells in each direction."""
         cardinal_directions = ["up", "left", "down", "right"]
         lidar_reference_indices = {"up": 480, "left": 320, "down": 160, "right": 639}
         current_facing = self._orientation_to_direction()
@@ -129,7 +100,7 @@ class Robot:
         return visibility
 
     def get_unmapped_cells(self) -> list:
-        """Return a list of all unmapped cells discovered so far."""
+        """Return frontier cells (between known and unknown)."""
         self.lidar = self.robot.get_lidar_range_list()
         if not self.lidar:
             return []
@@ -143,8 +114,8 @@ class Robot:
         directions = self._compute_cell_visibility()
         visible_cells = self._generate_visible_coordinates(self.x, self.y, directions)
 
-        self.known_cells.extend(visible_cells)
-        self.known_cells.append((self.x, self.y))
+        self.known_cells.update(visible_cells)
+        self.known_cells.add((self.x, self.y))
 
         self._add_to_graph(self.x, self.y, directions)
 
@@ -154,11 +125,11 @@ class Robot:
         return frontiers
 
     def _manhattan_distance(self, start, end):
-        """Calculates the Manhattan distance between two grid cells."""
+        """Manhattan distance between two grid cells."""
         return abs(start[0] - end[0]) + abs(start[1] - end[1])
 
     def find_path(self, start, end):
-        """Finds the shortest path between two cells using A* algorithm."""
+        """Find shortest path between two cells using A*."""
         if start not in self.env_graph or end not in self.env_graph:
             return None
 
@@ -192,7 +163,7 @@ class Robot:
         return None
 
     def _reconstruct_path(self, came_from, current):
-        """Reconstructs the path from the came_from dictionary."""
+        """Reconstruct path from A* came_from data."""
         path = [current]
         while current in came_from:
             current = came_from[current]
@@ -200,18 +171,19 @@ class Robot:
         return path[::-1]
 
     def find_frontier_and_path(self) -> None:
-        """Find the nearest frontier (by Manhattan distance) and compute path to it."""
+        """Find nearest frontier (by Manhattan distance) and compute path."""
         frontiers = self.get_unmapped_cells()
         if not frontiers:
             self.current_frontier_and_path = [None, None]
             return
+
         current_position = (self.x, self.y)
         best_frontier = min(frontiers, key=lambda f: self._manhattan_distance(current_position, f))
         shortest_path = self.find_path(current_position, best_frontier)
         self.current_frontier_and_path = [best_frontier, shortest_path]
 
     def _is_frontier_cell(self, cell):
-        """Check if the given cell is a frontier cell (i.e., it has at least one unknown neighbor)."""
+        """Is cell a frontier (touches unknown neighbors)?"""
         x, y = cell
         neighbors = [(x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)]
         for n in neighbors:
@@ -220,41 +192,24 @@ class Robot:
         return False
 
     def sense(self) -> None:
-        """Gather sensor data.
-
-        Use the robot's sensors to collect data about its environment.
-        This method updates internal state variables based on sensor readings.
-        """
+        """Collect sensor data and find path to next frontier."""
         self.time = self.robot.get_time()
         self.orientation = self.robot.get_orientation()
         x, y = self.robot.get_current_position()
         self.x = int(round(x / self.CELL_SIZE))
         self.y = int(round(y / self.CELL_SIZE))
-
         self.find_frontier_and_path()
 
-
     def plan(self) -> None:
-        """Plan the robot's actions.
-
-        Process the data collected during sensing and decide the next course
-        of action for the robot.
-        """
+        """Plan actions (not used here)."""
         pass
 
     def act(self) -> None:
-        """Execute planned actions.
-
-        Perform the actions decided in the planning step, such as moving or
-        interacting with the environment.
-        """
+        """Execute planned actions (not used here)."""
         pass
 
     def spin(self) -> None:
-        """Spin the robot.
-
-        This is the main loop where the robot performs its sense-plan-act cycle.
-        """
+        """Sense-Plan-Act cycle."""
         self.sense()
         self.plan()
         self.act()
