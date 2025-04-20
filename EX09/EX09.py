@@ -1,150 +1,169 @@
+"""EX09."""
 import math
 from collections import deque
 
 
-class TurtleBot:
-    def __init__(self, api):
-        self.api = api
-        self.seen_cells = [(0, 0)]
-        self.pending_cells = []
-        self.world_map = {}
+class Robot:
+    """Turtlebot robot."""
+
+    def __init__(self, robot: object) -> None:
+        self.robot = robot
+        self.accessible = [(0, 0)]
+        self.unknown = []
+        self.layout = {}
         self.lidar_scan = None
-        self.direction = None
-        self.location = None
-        self.target_info = None
+        self.heading = None
+        self.coords = None
+        self.target = None
 
-    def gather_data(self):
-        self.direction = self.api.get_orientation()
-        self.lidar_scan = self.api.get_lidar_range_list()
-        self.location = self.api.get_current_position()
-        if self.lidar_scan:
-            self.dist_front = self.lidar_scan[480]
-            self.dist_back = self.lidar_scan[150]
-            self.dist_right = self.lidar_scan[1]
-            self.dist_left = self.lidar_scan[320]
+    def get_traversable_cells(self) -> list:
+        return self.accessible
 
-    def get_visible_area(self, dist, heading):
-        px, py = self.location
-        offsets = {
-            "north": (0, 1),
-            "south": (0, -1),
-            "east": (1, 0),
-            "west": (-1, 0)
+    def get_unmapped_cells(self) -> list:
+        return self.unknown
+
+    def get_map(self) -> dict:
+        return self.layout
+
+    def add_segments(self, count, direction):
+        x, y = self.coords
+        shifts = {
+            "up": (0, 1),
+            "down": (0, -1),
+            "back": (0, -1),
+            "left": (-1, 0),
+            "right": (1, 0)
         }
 
-        dx, dy = offsets[heading]
-        steps = []
-
-        for step in range(1, int(dist) + 1):
-            coord = (px + dx * step, py + dy * step)
-            if step == 1:
-                self.world_map.setdefault(self.location, []).append(coord)
-                self.world_map.setdefault(coord, []).append(self.location)
-
-            if coord not in self.seen_cells:
-                self.seen_cells.append(coord)
-                self.pending_cells.append(coord)
-
-    def orientation_case(self):
-        if -0.1 < self.direction < 0.1:
-            if self.dist_front > 0.45:
-                self.get_visible_area(self.dist_front // 0.625, "north")
-            if self.dist_back > 0.45:
-                self.get_visible_area(self.dist_back // 0.625, "south")
-            if self.dist_right > 0.45:
-                self.get_visible_area(self.dist_right // 0.625, "east")
-            if self.dist_left > 0.45:
-                self.get_visible_area(self.dist_left // 0.625, "west")
-
-        elif 1.47 < self.direction < 1.67:
-            if self.dist_front > 0.45:
-                self.get_visible_area(self.dist_front // 0.625, "west")
-            if self.dist_back > 0.45:
-                self.get_visible_area(self.dist_back // 0.625, "east")
-            if self.dist_right > 0.45:
-                self.get_visible_area(self.dist_right // 0.625, "north")
-            if self.dist_left > 0.45:
-                self.get_visible_area(self.dist_left // 0.625, "south")
-
-        elif -1.67 < self.direction < -1.47:
-            if self.dist_front > 0.45:
-                self.get_visible_area(self.dist_front // 0.625, "east")
-            if self.dist_back > 0.45:
-                self.get_visible_area(self.dist_back // 0.625, "west")
-            if self.dist_right > 0.45:
-                self.get_visible_area(self.dist_right // 0.625, "south")
-            if self.dist_left > 0.45:
-                self.get_visible_area(self.dist_left // 0.625, "north")
-
-        elif self.direction > math.pi - 0.1 or self.direction < -math.pi + 0.1:
-            if self.dist_front > 0.45:
-                self.get_visible_area(self.dist_front // 0.625, "south")
-            if self.dist_back > 0.45:
-                self.get_visible_area(self.dist_back // 0.625, "north")
-            if self.dist_right > 0.45:
-                self.get_visible_area(self.dist_right // 0.625, "west")
-            if self.dist_left > 0.45:
-                self.get_visible_area(self.dist_left // 0.625, "east")
-
-    def explore(self):
-        if not self.pending_cells:
+        if direction not in shifts:
             return
 
-        px, py = self.location
-        closest = None
-        shortest = float('inf')
+        dx, dy = shifts[direction]
 
-        for cell in self.pending_cells:
-            dist = abs(cell[0] - px) + abs(cell[1] - py)
-            if dist < shortest:
-                shortest = dist
-                closest = cell
+        for step in range(1, count + 1):
+            pos = (x + dx * step, y + dy * step)
 
-        route = self._bfs(self.location, closest)
-        self.target_info = (closest, route)
+            if step == 1:
+                self.layout.setdefault(self.coords, []).append(pos)
+                self.layout.setdefault(pos, []).append(self.coords)
 
-        if closest in self.pending_cells:
-            self.pending_cells.remove(closest)
+            if pos not in self.accessible:
+                self.accessible.append(pos)
+                self.unknown.append(pos)
 
-    def _bfs(self, source, target):
-        queue = deque([(source, [source])])
-        visited = set([source])
+    def _forward(self):
+        if self.ahead > 0.45:
+            dist = self.ahead // 0.625
+            self.add_segments(int(dist), "up")
+        if self.behind > 0.45:
+            dist = self.behind // 0.625
+            self.add_segments(int(dist), "back")
+        if self.rightside > 0.45:
+            dist = self.rightside // 0.625
+            self.add_segments(int(dist), "right")
+        if self.leftside > 0.45:
+            dist = self.leftside // 0.625
+            self.add_segments(int(dist), "left")
 
+    def _left_turn(self):
+        if self.ahead > 0.45:
+            dist = self.ahead // 0.625
+            self.add_segments(int(dist), "left")
+        if self.behind > 0.45:
+            dist = self.behind // 0.625
+            self.add_segments(int(dist), "right")
+        if self.rightside > 0.45:
+            dist = self.rightside // 0.625
+            self.add_segments(int(dist), "up")
+        if self.leftside > 0.45:
+            dist = self.leftside // 0.625
+            self.add_segments(int(dist), "back")
+
+    def _right_turn(self):
+        if self.ahead > 0.45:
+            dist = self.ahead // 0.625
+            self.add_segments(int(dist), "right")
+        if self.behind > 0.45:
+            dist = self.behind // 0.625
+            self.add_segments(int(dist), "left")
+        if self.rightside > 0.45:
+            dist = self.rightside // 0.625
+            self.add_segments(int(dist), "back")
+        if self.leftside > 0.45:
+            dist = self.leftside // 0.625
+            self.add_segments(int(dist), "up")
+
+    def _map_area(self):
+        if -0.1 < self.heading < 0.1:
+            self._forward()
+        if 1.47 < self.heading < 1.67:
+            self._left_turn()
+        if -1.67 < self.heading < -1.47:
+            self._right_turn()
+        if self.heading > (math.pi - 0.1) or self.heading < (-math.pi + 0.1):
+            if self.ahead > 0.45:
+                dist = self.ahead // 0.625
+                self.add_segments(int(dist), "back")
+            if self.behind > 0.45:
+                dist = self.behind // 0.625
+                self.add_segments(int(dist), "up")
+            if self.rightside > 0.45:
+                dist = self.rightside // 0.625
+                self.add_segments(int(dist), "left")
+            if self.leftside > 0.45:
+                dist = self.leftside // 0.625
+                self.add_segments(int(dist), "right")
+
+    def _bfs(self, start, goal):
+        queue = deque()
+        queue.append((start, [start]))
+        visited = {start}
         while queue:
             current, path = queue.popleft()
-            if current == target:
+            if current == goal:
                 return path
-
-            for neighbor in self.world_map.get(current, []):
+            for neighbor in self.layout.get(current, []):
                 if neighbor not in visited:
                     visited.add(neighbor)
                     queue.append((neighbor, path + [neighbor]))
-
         return []
 
-    def get_traversable_cells(self):
-        return self.seen_cells
+    def _choose_frontier(self):
+        if not self.unknown:
+            return
+        min_dist = float('inf')
+        nearest = None
+        for cell in self.unknown:
+            dist = abs(cell[0] - self.coords[0]) + abs(cell[1] - self.coords[1])
+            if dist < min_dist:
+                min_dist = dist
+                nearest = cell
+        route = self._bfs(self.coords, nearest)
+        self.target = (nearest, route)
+        if nearest in self.unknown:
+            self.unknown.remove(nearest)
 
-    def get_unmapped_cells(self):
-        return self.pending_cells
+    def get_frontier_and_path(self) -> list:
+        return self.target
 
-    def get_map(self):
-        return self.world_map
+    def sense(self) -> None:
+        self.heading = self.robot.get_orientation()
+        self.lidar_readings = self.robot.get_lidar_range_list()
+        self.coords = self.robot.get_current_position()
+        if self.lidar_readings:
+            self.ahead = self.lidar_readings[480]
+            self.behind = self.lidar_readings[150]
+            self.rightside = self.lidar_readings[1]
+            self.leftside = self.lidar_readings[320]
 
-    def get_frontier_and_path(self):
-        return self.target_info
+    def plan(self) -> None:
+        self._map_area()
+        self._choose_frontier()
 
-    def sense(self):
-        self.gather_data()
-
-    def plan(self):
-        self.orientation_case()
-        self.explore()
-
-    def act(self):
+    def act(self) -> None:
         pass
 
-    def spin(self):
+    def spin(self) -> None:
         self.sense()
         self.plan()
         self.act()
