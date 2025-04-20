@@ -1,178 +1,120 @@
 import math
+from collections import deque
 
-class Robot:
-    CELL_SIZE = 0.615
 
-    def __init__(self, robot: object) -> None:
-        self.robot = robot
-        self.time = 0.0
-        self.orientation = 0.0
-        self.current_frontier_and_path = None
-        self.lidar = None
-        self.known_cells = set()
-        self.env_graph = {}
-        self.mapped_cells = {}
-        self.x = 0
-        self.y = 0
+class TurtleBot:
+    def __init__(self, api):
+        self.api = api
+        self.traversed = [(0, 0)]
+        self.unexplored = []
+        self.map_data = {}
+        self.scan = None
+        self.angle = None
+        self.coord = None
+        self.path_to_frontier = None
 
-    def get_frontier_and_path(self) -> list:
-        return self.current_frontier_and_path
+    def collect_data(self):
+        self.angle = self.api.get_orientation()
+        self.scan = self.api.get_lidar_range_list()
+        self.coord = self.api.get_current_position()
+        if self.scan:
+            self.forward = self.scan[480]
+            self.backward = self.scan[160]
+            self.left = self.scan[320]
+            self.right = self.scan[1]
 
-    def _orientation_to_direction(self) -> str:
-        angle = self.facing_angle
-        margin = 0.05
-        if abs(angle) < margin:
-            return "up"
-        elif abs(angle - math.pi / 2) < margin:
-            return "left"
-        elif abs(angle - math.pi) < margin or abs(angle + math.pi) < margin:
-            return "down"
-        elif abs(angle + math.pi / 2) < margin:
-            return "right"
-        return "unknown"
+    def explore_direction(self, distance, side):
+        x, y = self.coord
+        directions = {
+            "north": (0, 1),
+            "south": (0, -1),
+            "east": (1, 0),
+            "west": (-1, 0)
+        }
 
-    def get_traversable_cells(self) -> list:
-        return list(self.known_cells)
-
-    def get_map(self) -> dict:
-        return self.env_graph
-
-    def _resolve_lidar_index(self, current: str, target: str, base_indices: dict, dir_labels: list) -> int:
-        current_idx = dir_labels.index(current)
-        relative_idx = (dir_labels.index(target) - current_idx) % 4
-        return list(base_indices.values())[relative_idx]
-
-    def _generate_visible_coordinates(self, x: int, y: int, visibility: dict) -> list:
-        result = []
-        for i in range(visibility["up"]):
-            result.append((x, y + i + 1))
-        for i in range(visibility["left"]):
-            result.append((x - i - 1, y))
-        for i in range(visibility["down"]):
-            result.append((x, y - i - 1))
-        for i in range(visibility["right"]):
-            result.append((x + i + 1, y))
-        return result
-
-    def _add_to_graph(self, x: int, y: int, visibility: dict) -> None:
-        neighbors = []
-        if visibility["up"]:
-            neighbors.append((x, y + 1))
-        if visibility["left"]:
-            neighbors.append((x - 1, y))
-        if visibility["down"]:
-            neighbors.append((x, y - 1))
-        if visibility["right"]:
-            neighbors.append((x + 1, y))
-        self.env_graph[(x, y)] = neighbors
-        self.mapped_cells[(x, y)] = neighbors
-        for neighbor in neighbors:
-            self.env_graph.setdefault(neighbor, [])
-            if (x, y) not in self.env_graph[neighbor]:
-                self.env_graph[neighbor].append((x, y))
-
-    def _compute_cell_visibility(self) -> dict:
-        cardinal_directions = ["up", "left", "down", "right"]
-        lidar_reference_indices = {"up": 480, "left": 320, "down": 160, "right": 639}
-        current_facing = self._orientation_to_direction()
-        visibility = {}
-        for direction in cardinal_directions:
-            idx = self._resolve_lidar_index(current_facing, direction, lidar_reference_indices, cardinal_directions)
-            segment = self.lidar[idx - 10: idx + 10]
-            valid_readings = [d for d in segment if not math.isinf(d)]
-            max_distance = max(valid_readings, default=0.0)
-            visibility[direction] = int(max_distance / self.CELL_SIZE)
-        return visibility
-
-    def get_unmapped_cells(self) -> list:
-        self.lidar = self.robot.get_lidar_range_list()
-        if not self.lidar:
-            return []
-        self.facing_angle = self.robot.get_orientation()
-        x, y = self.robot.get_current_position()
-        self.x = int(round(x / self.CELL_SIZE))
-        self.y = int(round(y / self.CELL_SIZE))
-        directions = self._compute_cell_visibility()
-        visible_cells = self._generate_visible_coordinates(self.x, self.y, directions)
-        self.known_cells.update(visible_cells)
-        self.known_cells.add((self.x, self.y))
-        self._add_to_graph(self.x, self.y, directions)
-        robot_pos = (self.x, self.y)
-        frontiers = [cell for cell in self.known_cells if self._is_frontier_cell(cell) and cell != robot_pos]
-        return frontiers
-
-    def _manhattan_distance(self, start, end):
-        return abs(start[0] - end[0]) + abs(start[1] - end[1])
-
-    def find_path(self, start, end):
-        if start not in self.env_graph or end not in self.env_graph:
-            return None
-        open_set = {start}
-        closed_set = set()
-        came_from = {}
-        g_score = {start: 0}
-        f_score = {start: self._manhattan_distance(start, end)}
-        while open_set:
-            current = min(open_set, key=lambda node: f_score.get(node, float('inf')))
-            if current == end:
-                return self._reconstruct_path(came_from, current)
-            open_set.remove(current)
-            closed_set.add(current)
-            for neighbor in self.env_graph.get(current, []):
-                if neighbor in closed_set:
-                    continue
-                tentative_g_score = g_score[current] + 1
-                if neighbor not in open_set or tentative_g_score < g_score.get(neighbor, float('inf')):
-                    came_from[neighbor] = current
-                    g_score[neighbor] = tentative_g_score
-                    f_score[neighbor] = tentative_g_score + self._manhattan_distance(neighbor, end)
-                    open_set.add(neighbor)
-        return None
-
-    def _reconstruct_path(self, came_from, current):
-        path = [current]
-        while current in came_from:
-            current = came_from[current]
-            path.append(current)
-        return path[::-1]
-
-    def find_frontier_and_path(self) -> None:
-        frontiers = self.get_unmapped_cells()
-        if not frontiers:
-            self.current_frontier_and_path = [None, None]
+        if side not in directions:
             return
-        current_position = (self.x, self.y)
-        frontiers_sorted = sorted(frontiers, key=lambda f: (self._manhattan_distance(current_position, f), f[1], f[0]))
-        for frontier in frontiers_sorted:
-            path = self.find_path(current_position, frontier)
-            if path:
-                self.current_frontier_and_path = [frontier, path]
-                return
-        self.current_frontier_and_path = [None, None]
 
-    def _is_frontier_cell(self, cell):
-        x, y = cell
-        neighbors = [(x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)]
-        for n in neighbors:
-            if n not in self.known_cells:
-                return True
-        return False
+        dx, dy = directions[side]
+        for i in range(1, int(distance) + 1):
+            new = (x + dx * i, y + dy * i)
 
-    def sense(self) -> None:
-        self.time = self.robot.get_time()
-        self.orientation = self.robot.get_orientation()
-        x, y = self.robot.get_current_position()
-        self.x = int(round(x / self.CELL_SIZE))
-        self.y = int(round(y / self.CELL_SIZE))
-        self.find_frontier_and_path()
+            if i == 1:
+                self.map_data.setdefault(self.coord, []).append(new)
+                self.map_data.setdefault(new, []).append(self.coord)
 
-    def plan(self) -> None:
+            if new not in self.traversed:
+                self.traversed.append(new)
+                if new not in self.unexplored:
+                    self.unexplored.append(new)
+
+    def build_map(self):
+        if -0.1 < self.angle < 0.1:
+            if self.forward > 0.45:
+                self.explore_direction(self.forward // 0.625, "north")
+            if self.backward > 0.45:
+                self.explore_direction(self.backward // 0.625, "south")
+        elif 1.47 < self.angle < 1.67:
+            if self.forward > 0.45:
+                self.explore_direction(self.forward // 0.625, "west")
+        elif -1.67 < self.angle < -1.47:
+            if self.forward > 0.45:
+                self.explore_direction(self.forward // 0.625, "east")
+
+    def bfs_path(self, start, goal):
+        queue = deque([(start, [start])])
+        visited = set([start])
+
+        while queue:
+            current, path = queue.popleft()
+            if current == goal:
+                return path
+
+            for neighbor in self.map_data.get(current, []):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append((neighbor, path + [neighbor]))
+
+        return []
+
+    def locate_frontier(self):
+        if not self.unexplored:
+            return
+
+        closest = None
+        shortest = float("inf")
+        for cell in self.unexplored:
+            dist = abs(cell[0] - self.coord[0]) + abs(cell[1] - self.coord[1])
+            if dist < shortest:
+                shortest = dist
+                closest = cell
+
+        route = self.bfs_path(self.coord, closest)
+        self.path_to_frontier = (closest, route)
+
+    def get_traversable_cells(self):
+        return self.traversed
+
+    def get_unmapped_cells(self):
+        return self.unexplored
+
+    def get_map(self):
+        return self.map_data
+
+    def get_frontier_and_path(self):
+        return self.path_to_frontier
+
+    def sense(self):
+        self.collect_data()
+
+    def plan(self):
+        self.build_map()
+        self.locate_frontier()
+
+    def act(self):
         pass
 
-    def act(self) -> None:
-        pass
-
-    def spin(self) -> None:
+    def spin(self):
         self.sense()
         self.plan()
         self.act()
