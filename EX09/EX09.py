@@ -26,6 +26,7 @@ class Robot:
         return self.layout
 
     def add_segments(self, count, direction):
+        """Add visible segments in a specific direction from current position."""
         x, y = self.coords
         shifts = {
             "up": (0, 1),
@@ -52,6 +53,7 @@ class Robot:
                 self.unknown.append(pos)
 
     def _forward(self):
+        """Add cells when facing 'up' (north-like direction)."""
         if self.ahead > 0.45:
             dist = self.ahead // 0.625
             self.add_segments(int(dist), "up")
@@ -66,6 +68,7 @@ class Robot:
             self.add_segments(int(dist), "left")
 
     def _left_turn(self):
+        """Add cells when facing left."""
         if self.ahead > 0.45:
             dist = self.ahead // 0.625
             self.add_segments(int(dist), "left")
@@ -80,6 +83,7 @@ class Robot:
             self.add_segments(int(dist), "back")
 
     def _right_turn(self):
+        """Add cells when facing right."""
         if self.ahead > 0.45:
             dist = self.ahead // 0.625
             self.add_segments(int(dist), "right")
@@ -94,6 +98,7 @@ class Robot:
             self.add_segments(int(dist), "up")
 
     def _map_area(self):
+        """Map visible environment based on current heading."""
         if -0.1 < self.heading < 0.1:
             self._forward()
         if 1.47 < self.heading < 1.67:
@@ -115,6 +120,7 @@ class Robot:
                 self.add_segments(int(dist), "right")
 
     def _bfs(self, start, goal):
+        """Perform Breadth-First Search from start to goal in the map."""
         queue = deque()
         queue.append((start, [start]))
         visited = {start}
@@ -129,6 +135,7 @@ class Robot:
         return []
 
     def _choose_frontier(self):
+        """Select closest unmapped cell and compute path to it."""
         if not self.unknown:
             return
         min_dist = float('inf')
