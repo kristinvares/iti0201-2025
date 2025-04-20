@@ -7,6 +7,7 @@ class Robot:
     """Turtlebot robot."""
 
     def __init__(self, robot: object) -> None:
+        """Initialize the robot with default values and state."""
         self.robot = robot
         self.accessible = [(0, 0)]
         self.unknown = []
@@ -17,12 +18,15 @@ class Robot:
         self.target = None
 
     def get_traversable_cells(self) -> list:
+        """Return a list of known traversable cells."""
         return self.accessible
 
     def get_unmapped_cells(self) -> list:
+        """Return a list of known but unmapped cells."""
         return self.unknown
 
     def get_map(self) -> dict:
+        """Return the current map layout as a graph."""
         return self.layout
 
     def add_segments(self, count, direction):
@@ -151,9 +155,11 @@ class Robot:
             self.unknown.remove(nearest)
 
     def get_frontier_and_path(self) -> list:
+        """Return the current target frontier and path to it."""
         return self.target
 
     def sense(self) -> None:
+        """Update internal sensor data from robot."""
         self.heading = self.robot.get_orientation()
         self.lidar_readings = self.robot.get_lidar_range_list()
         self.coords = self.robot.get_current_position()
@@ -164,13 +170,16 @@ class Robot:
             self.leftside = self.lidar_readings[320]
 
     def plan(self) -> None:
+        """Perform planning logic to decide next frontier."""
         self._map_area()
         self._choose_frontier()
 
     def act(self) -> None:
+        """Execute the planned action (not implemented)."""
         pass
 
     def spin(self) -> None:
+        """Run one full sense-plan-act cycle."""
         self.sense()
         self.plan()
         self.act()
